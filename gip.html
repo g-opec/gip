@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root { --primary: #0052cc; --bg: #f4f6f9; --border: #dee2e6; }
+    body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #333; margin: 20px; }
+    .main-section { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    
+    /* ABAS */
+    .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+    .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; color: #555; }
+    .tab-btn.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* UI Genérica */
+    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-success { background-color: #28a745; color: white; }
+    .btn-secondary { background-color: #6c757d; color: white; }
+    .btn-info { background-color: #17a2b8; color: white; }
+    input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    
+    /* Tabelas */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f4f5f7; font-weight: bold; }
+    .linha-cancelada td { text-decoration: line-through; color: #a0a0a0; background: #f9f9f9; }
+    
+    /* Lista de Materiais */
+    #lista-materiais li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    #lista-materiais li:hover { background-color: #f8f9fa; }
+  </style>
+</head>
+<body>
+
+  <div class="main-section">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tabela')">1. Programação</button>
+      <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
+      <button class="tab-btn" onclick="switchTab('mapa')">3. Gerar Mapa</button>
+      <button class="tab-btn" onclick="switchTab('envios')">4. Envios (E-mail)</button>
+    </div>
+
+    <div id="tab-tabela" class="tab-content active">
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="file" id="fileUpload" accept=".xlsx, .xls, .csv, .pdf" />
+        <select id="select-ano" onchange="mudarAno()" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" disabled>
+      <option value="">Carregando anos...</option>
+    </select>
+        <button class="btn btn-primary" onclick="processarArquivo()">Carregar Dados</button>
+        <button class="btn btn-success" onclick="salvarProgramacao()">Salvar Tabela</button>
+      </div>
+      <div id="statusMessage" style="font-weight:bold; margin-bottom: 15px; color:#555;">Aguardando importação...</div>
+
+      <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+    <input type="text" id="filtroPartido" placeholder="🔎 Filtrar por Partido - Cargo..." onkeyup="filtrarTabelaPolitica()" list="listaPartidos" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; font-size: 14px;">
+    <datalist id="listaPartidos"></datalist>
+      </div>
+
+      <table id="tabelaPolitica">
+        <thead>
+          <tr><th>Data</th><th>Bloco</th><th>Seq.</th><th>Partido / Federação / Coligação</th><th>Cargo</th><th>Dur.</th><th>Título do Material</th></tr>
+        </thead>
+        <tbody></tbody>
+         <tfoot>
+            <tr style="background-color: #f4f5f7;">
+                <td colspan="7" style="text-align: right; font-weight: bold; color: #333;">Total de Inserções Válidas (Visíveis):</td>
+                <td id="totalInsercoes" style="font-weight: 900; color: #1e40af; font-size: 15px;">0</td>
+            </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div id="tab-arquivos" class="tab-content">
+      <div style="display: flex; gap: 20px;">
+        
+        <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 6px; background:#f8f9fa;">
+          <h3 style="margin-top:0;">Cadastrar / Editar Material</h3>
+          <input type="hidden" id="mat-id">
+          
+          <div style="display:flex; flex-direction:column; gap: 10px;">
+            <div>
+              <label><strong>Arquivo (Opcional)</strong></label><br>
+              <div style="display: flex; gap: 5px;">
+                <input type="file" id="mat-file" accept="audio/*, video/*" style="flex-grow:1;">
+                <button class="btn btn-info" onclick="extrairMetadados()">Extrair Dados</button>
+              </div>
+            </div>
+            
+            <div>
+              <label><strong>Título do Material *</strong></label><br>
+              <input type="text" id="mat-titulo" style="width: 100%;" required>
+            </div>
+            
+            <div>
+              <label><strong>Duração (Segundos) *</strong></label><br>
+              <select id="mat-duracao" style="width: 100px;" required>
+                <option value="30">30s</option>
+                <option value="60">60s</option>
+              </select>  
+            </div>
+            
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+              <button class="btn btn-primary" onclick="salvarMaterial()" id="btn-salvar-mat">Salvar Material</button>
+              <button class="btn btn-secondary" onclick="resetarFormMaterial()">Novo Formulário</button>
+            </div>
+            <div id="status-mat" style="font-weight:bold; font-size:13px; margin-top:5px;"></div>
+          </div>
+        </div>
+
+        <div style="flex: 1; display:flex; flex-direction:column; gap:15px;">
+          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; height: 250px; overflow-y:auto;">
+            <h3 style="margin-top:0;">Lista de Materiais</h3>
+            <ul id="lista-materiais"><li>Aguardando carregamento...</li></ul>
+          </div>
+
+          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; background: #2c2c32; color:white; text-align:center;">
+            <h4 style="margin-top:0; color:#ddd;">Pré-visualização</h4>
+            <audio id="audio-player" controls style="display: none; width: 100%;"></audio>
+            <video id="video-player" controls style="display: none; width: 100%; max-height: 150px;"></video>
+            <p id="player-title" style="margin-top:10px; font-weight:bold;"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-mapa" class="tab-content">
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; display:flex; gap:15px; align-items:center;">
+        <div><label>Início: </label><input type="date" id="mapa-inicio"></div>
+        <div><label>Fim: </label><input type="date" id="mapa-fim"></div>
+        <button class="btn btn-primary" onclick="gerarGradeMapa()">Gerar Grade</button>
+      </div>
+
+      <div id="container-mapa-gerado" style="display: none; border: 1px solid #ddd; padding: 20px; border-radius: 6px; background: #fff;">
+    
+    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+      <h3 style="margin: 0;">MAPA DE MÍDIA Nº <span id="mapa-numero">---</span> - <span id="mapa-partido-nome">PARTIDO</span> - <span id="mapa-partido-cargo">CARGO</span></h3>
+      <p style="margin: 5px 0;">Período: <span id="mapa-periodo-texto"></span></p>
+    </div>
+
+    <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+      
+      <div style="flex: 1; min-width: 300px;">
+        <h4 style="margin-top: 0;">Legenda de Materiais</h4>
+        <button class="btn btn-secondary" onclick="adicionarMaterialLegenda()" style="margin-bottom: 10px; font-size: 12px;">+ Adicionar Peça</button>
+        <table id="tabela-legendas" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f4f5f7;">
+              <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Peça</th>
+              <th style="border: 1px solid #ddd; padding: 8px;">Título do Material</th>
+              <th style="border: 1px solid #ddd; padding: 8px; width: 60px; text-align: center;">Dur.</th>
+            </tr>
+          </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+
+      <div style="flex: 2; min-width: 500px; overflow-x: auto;">
+        <h4 style="margin-top: 0;">Grade de Distribuição</h4>
+        <table id="tabela-grade-mapa" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead>
+            </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+        <div style="text-align: right; margin-top: 20px;">
+          <button class="btn btn-success" onclick="finalizarMapa()">Finalizar e Salvar Mapa</button>
+        </div>
+      </div>
+    </div>
+    <!-- SEÇÃO 4: ENVIOS -->
+    <div id="tab-envios" class="tab-content">
+      <div style="display: flex; gap: 20px;">
+        
+        <!-- COLUNA ESQUERDA: LISTA DE ARQUIVOS E CONTATOS -->
+        <div style="flex: 1; display:flex; flex-direction:column; gap:15px;">
+          
+          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; background:#f8f9fa;">
+            <h3 style="margin-top:0;">Lista de Contatos Padrão</h3>
+            <p style="font-size:12px; color:#666; margin-top:-10px;">Separe os e-mails por vírgula.</p>
+            <textarea id="lista-emails-padrao" rows="4" style="width: 100%; border:1px solid #ccc; border-radius:4px; padding:8px;" placeholder="exemplo1@email.com, exemplo2@email.com..."></textarea>
+            <button class="btn btn-secondary btn-sm" onclick="salvarContatos()" style="margin-top:10px; font-size:12px;">Salvar Contatos no Ano</button>
+            <span id="status-contatos" style="font-size:12px; color:green; margin-left:10px;"></span>
+          </div>
+
+          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; flex-grow:1; overflow-y:auto; max-height:400px;">
+            <h3 style="margin-top:0;">Selecionar Anexos</h3>
+            
+            <h4 style="margin-bottom:5px; border-bottom:1px solid #eee;">Mapas Gerados</h4>
+            <div id="check-list-mapas" style="font-size:14px; margin-bottom:15px; display:flex; flex-direction:column; gap:5px;">
+               <i>Carregando mapas...</i>
+            </div>
+
+            <h4 style="margin-bottom:5px; border-bottom:1px solid #eee;">Materiais / Mídias</h4>
+            <div id="check-list-materiais" style="font-size:14px; display:flex; flex-direction:column; gap:5px;">
+               <i>Carregando materiais...</i>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: COMPOSIÇÃO DO E-MAIL -->
+        <div style="flex: 1.5; border: 1px solid #ccc; padding: 20px; border-radius: 6px; background: #fff; display:flex; flex-direction:column; gap: 10px;">
+          <h3 style="margin-top:0;">Compor E-mail</h3>
+          
+          <div>
+            <label><strong>Para (Destinatários Principais):</strong></label>
+            <textarea id="email-para" rows="2" style="width: 100%; border:1px solid #ccc; border-radius:4px; padding:8px;" placeholder="Os contatos padrão aparecerão aqui..."></textarea>
+          </div>
+
+          <div>
+            <label><strong>CC (Com Cópia) - Opcional:</strong></label>
+            <input type="text" id="email-cc" style="width: 100%;" placeholder="copia@email.com">
+          </div>
+
+          <div>
+            <label><strong>Assunto:</strong></label>
+            <input type="text" id="email-assunto" style="width: 100%; font-weight:bold;">
+          </div>
+
+          <div style="flex-grow:1; display:flex; flex-direction:column;">
+            <label><strong>Corpo do E-mail:</strong></label>
+            <textarea id="email-corpo" style="width: 100%; flex-grow:1; min-height:200px; border:1px solid #ccc; border-radius:4px; padding:8px;"></textarea>
+          </div>
+
+          <div style="text-align: right; margin-top: 10px;">
+            <button class="btn btn-primary" onclick="atualizarTemplateEmail()" style="margin-right:10px;">🔄 Gerar Texto Padrão</button>
+            <button class="btn btn-success" id="btn-enviar-email" onclick="dispararEmail()">📤 Enviar E-mail</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Inicialização da página
+    window.onload = function() {
+  // 1. Busca os anos disponíveis para popular o Select
+  google.script.run
+    .withSuccessHandler(anos => {
+      const select = document.getElementById('select-ano');
+      select.innerHTML = '';
+      if (anos && anos.length > 0) {
+        select.disabled = false;
+        anos.forEach(ano => {
+          select.innerHTML += `<option value="${ano}">${ano}</option>`;
+        });
+        // 2. Carrega os dados (Tabela + Materiais) do primeiro ano da lista
+        carregarDadosDoAno(anos[0]);
+      } else {
+        select.innerHTML = '<option value="">Sem pastas</option>';
+        document.getElementById('statusMessage').innerText = "Pronto para importar primeira planilha.";
+      }
+    })
+    .getListAno();
+};
+
+function mudarAno() {
+  const anoSelecionado = document.getElementById('select-ano').value;
+  if (anoSelecionado) carregarDadosDoAno(anoSelecionado);
+}
+
+function carregarDadosDoAno(ano) {
+  document.getElementById('statusMessage').innerText = "Carregando dados da nuvem...";
+  
+  // Carrega Programação
+  google.script.run
+    .withSuccessHandler(matriz => {
+      if (matriz && matriz.length > 0) {
+        mapearDadosParaTabela(matriz);
+        document.getElementById('statusMessage').innerText = "Grade carregada com sucesso.";
+      } else {
+        dadosTabela = [];
+        renderTabelaPrincipal();
+        document.getElementById('statusMessage').innerText = "Pronto para gerar nova programação.";
+      }
+    }).carregarCSVProgramacao(ano);
+
+  // Carrega Materiais apenas 1 vez por mudança de ano
+  carregarListaMateriais(ano); 
+}
+
+    // --- CONTROLE DE ABAS ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+    }
+
+    // --- SEÇÃO 1: TABELA E IMPORTAÇÃO ---
+    let dadosTabela = []; 
+    function processarArquivo() {
+      const fileInput = document.getElementById('fileUpload');
+      const file = fileInput.files[0];
+      const status = document.getElementById('statusMessage');
+      if (!file) return alert("Selecione um arquivo.");
+
+      const fileType = file.name.split('.').pop().toLowerCase();
+      status.innerText = "Processando arquivo...";
+
+      if (fileType === 'xlsx' || fileType === 'xls' || fileType === 'csv') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const matrizBruta = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            mapearDadosParaTabela(organizarTextoExcel(matrizBruta));
+            status.innerText = "Planilha carregada com sucesso!";
+          } catch(err) { status.innerText = "Erro: " + err.message; }
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (fileType === 'pdf') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const base64Data = e.target.result.split(',')[1];
+          status.innerText = "Enviando PDF para OCR no servidor...";
+          google.script.run
+            .withSuccessHandler(texto => {
+              mapearDadosParaTabela(organizarTextoPDF(texto));
+              status.innerText = "PDF carregado com sucesso!";
+            }).processarPDFComOCR(base64Data, file.name);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function organizarTextoExcel(matrizBruta) {
+      const matrizOrganizada = [["Data", "Bloco", "Seq.", "Partido", "Cargo", "Dur.", "Horário"]];
+      let tipoModelo = 0; 
+      let cargoModelo2 = "Governadorr"; 
+      let linhaHeaderModelo2 = -1;
+      const legendaMap = {};
+
+      for (let i = 0; i < matrizBruta.length; i++) {
+        const linha = matrizBruta[i];
+        if (!linha) continue;
+
+        const txtLinha = [];
+        for (let j = 0; j < linha.length; j++) {
+          const celula = linha[j] !== undefined && linha[j] !== null ? String(linha[j]).trim() : "";
+          txtLinha.push(celula.toLowerCase());
+
+          if (celula.toLowerCase().startsWith("cargo:")) cargoModelo2 = celula.replace(/cargo:\s*/i, "").trim();
+
+          const matchTraco = celula.match(/^([A-Z])\s*[-–—:]\s*(.+)$/i);
+          if (matchTraco) {
+            const letra = matchTraco[1].toUpperCase();
+            const nomePartido = matchTraco[2].trim();
+            if (nomePartido.length > 3) legendaMap[letra] = nomePartido;
+          }
+
+          if (/^[A-Z]$/i.test(celula) && j + 1 < linha.length) {
+            const proximaCelula = String(linha[j + 1] || "").trim();
+            if (proximaCelula.length > 3 && isNaN(proximaCelula) && !/^[A-Z]$/i.test(proximaCelula)) {
+              legendaMap[celula.toUpperCase()] = proximaCelula;
+            }
+          }
+        }
+
+        const txtLinhaStr = txtLinha.join(" ");
+        if (txtLinhaStr.includes("data") && txtLinhaStr.includes("bloco") && (txtLinhaStr.includes("partido") || txtLinhaStr.includes("federação"))) {
+          if (tipoModelo === 0) tipoModelo = 1;
+        }
+        if (txtLinhaStr.includes("distribuição") && txtLinhaStr.includes("dia") && txtLinhaStr.includes("bloco")) {
+          tipoModelo = 2;
+          linhaHeaderModelo2 = i;
+        }
+      }
+
+      if (tipoModelo === 0) throw new Error("Formato de colunas do Excel não reconhecido.");
+
+      function formatarDataExcel(dataValor) {
+        if (dataValor === undefined || dataValor === null) return "";
+        let str = String(dataValor).trim();
+        if (str === "") return "";
+        let num = Number(str);
+        if (!isNaN(num) && num > 10000 && num < 100000) {
+          const dataObj = new Date(Math.round((num - 25569) * 86400000));
+          const dia = String(dataObj.getUTCDate()).padStart(2, '0');
+          const mes = String(dataObj.getUTCMonth() + 1).padStart(2, '0');
+          const ano = dataObj.getUTCFullYear();
+          return `${dia}/${mes}/${ano}`;
+        }
+        if (str.includes("-")) {
+          const p = str.split("-");
+          if (p.length === 3) {
+            if (p[0].length === 4) return `${p[2].substring(0,2)}/${p[1]}/${p[0]}`;
+            if (p[2].length === 4) return `${p[0]}/${p[1]}/${p[2]}`;
+          }
+        }
+        return str;
+      }
+
+      if (tipoModelo === 1) {
+        let dataAtual = "";
+        let blocoAtual = "";
+        for (let i = 0; i < matrizBruta.length; i++) {
+          const linha = matrizBruta[i];
+          if (!linha || linha.length === 0) continue;
+
+          const cols = [];
+          for (let c = 0; c < linha.length; c++) {
+            cols.push(linha[c] !== undefined && linha[c] !== null ? String(linha[c]).trim() : "");
+          }
+
+          if (cols.length === 0) continue;
+          const c0 = cols[0].toLowerCase();
+          if (c0.includes("período") || c0.includes("unidade") || c0 === "data") continue;
+
+          if (cols[0] !== "") dataAtual = formatarDataExcel(linha[0]);
+          if (cols[1] !== "") blocoAtual = cols[1];
+
+          const seq = cols[2] || "";
+          const partido = cols[3] || "";
+          const cargo = cols[4] || "";
+
+          if (seq !== "" || partido !== "" || cargo !== "") {
+            matrizOrganizada.push([dataAtual, blocoAtual, seq, partido, cargo, "", ""]);
+          }
+        }
+      } else if (tipoModelo === 2) {
+        if (linhaHeaderModelo2 === -1) throw new Error("Cabeçalho não pôde ser mapeado.");
+        const colMap = [];
+        const headerRow = matrizBruta[linhaHeaderModelo2];
+        let counts = {};
+        let lastBlocoId = "1";
+
+        for (let c = 2; c < headerRow.length; c++) {
+          let blocoStr = String(headerRow[c] || "").trim();
+          let blocoId = blocoStr ? blocoStr.replace(/bloco\s*/i, "").trim() : lastBlocoId;
+          lastBlocoId = blocoId;
+          if (!counts[blocoId]) counts[blocoId] = 0;
+          counts[blocoId]++; 
+          colMap.push({ bloco: blocoId, seq: counts[blocoId] });
+        }
+
+        for (let i = linhaHeaderModelo2 + 1; i < matrizBruta.length; i++) {
+          const linha = matrizBruta[i];
+          if (!linha || linha.length < 2) continue;
+
+          const distVal = String(linha[0] || "").trim();
+          const diaVal = String(linha[1] || "").trim();
+          if (!diaVal || distVal.toLowerCase().includes("total") || diaVal.toLowerCase().includes("dia")) continue;
+
+          const dataFormatada = formatarDataExcel(linha[1]);
+
+          for (let c = 2; c < linha.length; c++) {
+            const partidoChave = String(linha[c] || "").trim().toUpperCase();
+            if (partidoChave === "" || partidoChave === "_") continue;
+
+            const infoCol = colMap[c - 2];
+            if (!infoCol) continue;
+            const partidoNomeFinal = legendaMap[partidoChave] || partidoChave;
+
+            matrizOrganizada.push([dataFormatada, infoCol.bloco, String(infoCol.seq), partidoNomeFinal, cargoModelo2, "", ""]);
+          }
+        }
+      }
+      return matrizOrganizada;
+    }
+
+function organizarTextoPDF(textoBruto) { 
+  const matriz = [["Data", "Bloco", "Seq.", "Partido", "Cargo", "Dur.", "Horário"]];
+  console.log(textoBruto);
+  
+  // Lista de Cargos que servirão como a nossa "Trava"
+  const cargos = [
+    'Deputado Federal', 'Deputado Estadual', 'Senador', 
+    'Governador', 'Presidente', 'Prefeito', 'Vereador'
+  ];
+  
+  const regexSplitCargo = new RegExp(`(${cargos.join('|')})`, 'gi');
+  
+  let textoContinuo = textoBruto.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+  
+  // Remoção do cabeçalho dinâmico 
+  const regexCabecalho = /Período:.*?Unidade.*?Data Bloc Seq Partido \/ Federação \/ Coligação Cargo/gi;
+  textoContinuo = textoContinuo.replace(regexCabecalho, "").trim();
+  
+  // Divide o texto usando o Cargo
+  const chunks = textoContinuo.split(regexSplitCargo);
+  
+  let dataAtual = "";
+  let blocoAtual = "";
+  
+  const regexData = /(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})/;
+  
+  const padronizarData = (d) => {
+      if (d.includes('-')) {
+          const p = d.split('-');
+          if(p[0].length === 4) return `${p[2]}/${p[1]}/${p[0]}`; 
+          if(p[2].length === 4) return `${p[0]}/${p[1]}/${p[2]}`; 
+      }
+      return d;
+  };
+
+  for (let i = 0; i < chunks.length - 1; i += 2) {
+     let prefix = chunks[i].trim();
+     
+     let cargoRaw = chunks[i+1].trim();
+     let cargo = cargos.find(c => c.toLowerCase() === cargoRaw.toLowerCase()) || cargoRaw;
+     
+     // Extração da Data
+     let matchData = prefix.match(regexData);
+     if (matchData) {
+        dataAtual = padronizarData(matchData[1]);
+        let indexData = prefix.indexOf(matchData[0]);
+        prefix = prefix.substring(indexData + matchData[0].length).trim();
+     }
+     
+     let seqAtual = "";
+     let partido = prefix;
+     
+     // Captura Bloc e Seq
+     let numbersMatch = prefix.match(/^(\d+(?:\s+|$)){1,2}/);
+     
+     if (numbersMatch) {
+        let numerosStr = numbersMatch[0].trim();
+        let numeros = numerosStr.split(/\s+/);
+        
+        if (numeros.length === 1) {
+           seqAtual = numeros[0]; 
+        } else if (numeros.length >= 2) {
+           blocoAtual = numeros[0]; 
+           seqAtual = numeros[1];   
+        }
+        
+        partido = prefix.substring(numbersMatch[0].length).trim();
+     }
+
+     // ====================================================================
+     // CORREÇÃO DE INVERSÃO (CARGO ANTES DO PARTIDO)
+     // ====================================================================
+     if (partido === "" && seqAtual !== "") {
+         if (i + 2 < chunks.length) {
+             let nextPrefix = chunks[i+2];
+             
+             // Padrão 1: A próxima linha começa com uma Data?
+             let regexDataInvertida = /\b(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\b/;
+             let dataMatch = nextPrefix.match(regexDataInvertida);
+             
+             // Padrão 2: A próxima linha começa com números (Bloco/Seq)?
+             // O (?=\S) garante que não capture os números soltos de dentro de um partido (ex: 44-UNIÃO)
+             let regexNumerosInvertidos = /\s+(\d+(?:\s+\d+)?)\s+(?=\S)/;
+             let numMatch = nextPrefix.match(regexNumerosInvertidos);
+             
+             let splitIndex = -1;
+             
+             // Se encontrar ambos, corta onde aparecer primeiro (Math.min). Se achar só um, corta nele.
+             if (dataMatch && numMatch) {
+                 splitIndex = Math.min(dataMatch.index, numMatch.index);
+             } else if (dataMatch) {
+                 splitIndex = dataMatch.index;
+             } else if (numMatch) {
+                 splitIndex = numMatch.index;
+             }
+             
+             if (splitIndex !== -1) {
+                 // Resgata o partido
+                 partido = nextPrefix.substring(0, splitIndex).trim();
+                 // Devolve a data e/ou sequência para o próximo ciclo
+                 chunks[i+2] = nextPrefix.substring(splitIndex); 
+             } else {
+                 // Fallback: Tenta achar número no final do bloco 
+                 let nextRowEmptyMatch = nextPrefix.match(/\s+(\d+(?:\s+\d+)?)\s*$/);
+                 if (nextRowEmptyMatch) {
+                     splitIndex = nextRowEmptyMatch.index;
+                     partido = nextPrefix.substring(0, splitIndex).trim();
+                     chunks[i+2] = nextPrefix.substring(splitIndex);
+                 } else {
+                     // Se não tiver data nem número, tudo pertence ao partido
+                     partido = nextPrefix.trim();
+                     chunks[i+2] = "";
+                 }
+             }
+         }
+     }
+     // ====================================================================
+
+     partido = partido.replace(/^-+|-+$/g, "").trim();
+
+     if (cargo || partido || seqAtual) {
+         matriz.push([dataAtual, blocoAtual, seqAtual, partido, cargo, "", ""]);
+     }
+  }
+  
+  // Captura de Sobras Finais
+  if (chunks.length % 2 !== 0 && chunks[chunks.length - 1].trim() !== "") {
+      let lastPrefix = chunks[chunks.length - 1].trim();
+      let numbersMatch = lastPrefix.match(/^(\d+(?:\s+|$)){1,2}/);
+      if (numbersMatch) {
+          let numerosStr = numbersMatch[0].trim();
+          let numeros = numerosStr.split(/\s+/);
+          let s = numeros.length === 1 ? numeros[0] : numeros[1];
+          let b = numeros.length >= 2 ? numeros[0] : blocoAtual;
+          let p = lastPrefix.substring(numbersMatch[0].length).trim().replace(/^-+|-+$/g, "");
+          matriz.push([dataAtual, b, s, p, "", "", ""]);
+      }
+  }
+  
+  return matriz;
+}
+
+    function mapearDadosParaTabela(matriz) {
+  dadosTabela = [];
+  for(let i=1; i<matriz.length; i++){
+    // Se a matriz veio do CSV salvo, ela já pode ter a Letra na coluna 7 (8º item real após o Título)
+    const letraSalva = matriz[i][7] || ""; 
+    dadosTabela.push([
+      matriz[i][0] || "", // 0: Data
+      matriz[i][1] || "", // 1: Bloco
+      matriz[i][2] || "", // 2: Seq.
+      matriz[i][3] || "", // 3: Partido
+      matriz[i][4] || "", // 4: Cargo
+      matriz[i][5] || "", // 5: Dur.
+      matriz[i][6] || "", // 6: Título
+      false,              // 7: Cancelado (Booleano Interno)
+      letraSalva          // 8: LETRA DA PEÇA (Invisível)
+    ]);
+  }
+  renderTabelaPrincipal();
+}
+
+    function renderTabelaPrincipal() {
+  const tbody = document.querySelector("#tabelaPolitica tbody");
+  tbody.innerHTML = "";
+  let partidosSet = new Set(); 
+  const datalist = document.getElementById('listaPartidos');
+  if (datalist) datalist.innerHTML = '';
+  
+  dadosTabela.forEach((linha, index) => {
+    const isCancelado = linha[7];
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-index", index);
+    if (isCancelado) tr.className = "linha-cancelada";
+    
+    const partido = linha[3] ? linha[3].trim() : "";
+    const cargo = linha[4] ? linha[4].trim() : "";
+    if (partido && !isCancelado) {
+        const partidoCargo = cargo ? `${partido} - ${cargo}` : partido;
+        partidosSet.add(partidoCargo);
+    }
+
+    for (let i = 0; i < 7; i++) {
+      const td = document.createElement("td");
+      
+      if (i === 5) { 
+        if (isCancelado) {
+          td.innerText = "Cancelado";
+        } else {
+          td.innerText = linha[5] ? linha[5] + "s" : "30s"; 
+        }
+      } else {
+        td.innerText = linha[i] || ""; 
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  });
+  
+  if (datalist) {
+      Array.from(partidosSet).sort().forEach(p => {
+          datalist.innerHTML += `<option value="${p}">`;
+      });
+  }
+ filtrarTabelaPolitica();
+}
+
+// Filtra a tabela considerando tanto o Partido (coluna 3) quanto o Cargo (coluna 4) concatenados ou individuais
+function filtrarTabelaPolitica() {
+    const filtro = document.getElementById('filtroPartido').value.toUpperCase().trim();
+    const linhas = document.querySelectorAll('#tabelaPolitica tbody tr');
+
+    linhas.forEach(tr => {
+        const tdPartido = tr.cells[3] ? (tr.cells[3].textContent || tr.cells[3].innerText).trim() : "";
+        const tdCargo = tr.cells[4] ? (tr.cells[4].textContent || tr.cells[4].innerText).trim() : "";
+        
+        const textoCombinado = `${tdPartido} - ${tdCargo}`.toUpperCase();
+        
+        // Exibe a linha se o filtro corresponder à combinação Partido - Cargo ou a qualquer um deles
+        if (!filtro || textoCombinado.indexOf(filtro) > -1 || tdPartido.toUpperCase().indexOf(filtro) > -1 || tdCargo.toUpperCase().indexOf(filtro) > -1) {
+            tr.style.display = "";
+        } else {
+            tr.style.display = "none";
+        }
+    });
+    // Atualiza o total sempre que o usuário digitar no filtro
+    atualizarTotalVisivel();
+}
+
+ function atualizarTotalVisivel() {
+  const linhas = document.querySelectorAll('#tabelaPolitica tbody tr');
+  let total = 0;
+  linhas.forEach(tr => {
+    if (tr.style.display !== "none" && !tr.classList.contains('linha-cancelada')) {
+      total++;
+    }
+  });
+  document.getElementById('totalInsercoes').innerText = total;
+}   
+
+function getAnoDaTabela() {
+        if (dadosTabela.length > 0 && dadosTabela[0][0]) {
+            const parts = dadosTabela[0][0].split('/');
+            if (parts.length === 3) return parts[2];
+        }
+        return new Date().getFullYear().toString();
+    }
+
+    function salvarProgramacao() {
+  const dadosValidos = dadosTabela.filter(linha => !linha[7]); // Ignora cancelados
+  if(dadosValidos.length === 0) return alert("Não há dados válidos para salvar.");
+  
+  document.getElementById('statusMessage').innerText = "Salvando CSV no Drive...";
+  
+  // Adicionamos a 'Letra' no cabeçalho exportado
+  const cabecalhos = ["Data", "Bloco", "Seq.", "Partido / Federação / Coligação", "Cargo", "Dur.", "Título do Material", "Letra"];
+  
+  // Extrai apenas os itens visíveis (0 ao 6) e pula o booleano de cancelado para incluir a Letra (8)
+  const dadosParaCSV = dadosValidos.map(l => [l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[8] || ""]);
+  
+  const dadosComCabecalho = [cabecalhos, ...dadosParaCSV];
+  const csvString = dadosComCabecalho.map(linha => linha.join(";")).join("\n");
+  
+  google.script.run
+    .withSuccessHandler(url => {
+       document.getElementById('statusMessage').innerText = "Salvo com sucesso!";
+       alert("CSV Salvo e atualizado no sistema!");
+    })
+    .salvarCSVProgramacao(csvString, document.getElementById('select-ano').value);
+}
+
+    // --- SEÇÃO 2: MATERIAIS ---
+    let bancoMateriais = [];
+
+    function resetarFormMaterial() {
+      document.getElementById('mat-id').value = "";
+      document.getElementById('mat-titulo').value = "";
+      document.getElementById('mat-duracao').value = "";
+      document.getElementById('mat-file').value = "";
+      document.getElementById('status-mat').innerText = "";
+      document.getElementById('btn-salvar-mat').innerText = "Salvar Material";
+    }
+
+    function extrairMetadados() {
+      const file = document.getElementById('mat-file').files[0];
+      if(!file) return alert("Anexe um arquivo primeiro.");
+      
+      document.getElementById('mat-titulo').value = file.name.split('.').slice(0, -1).join('.');
+      
+      const media = document.createElement(file.type.includes('video') ? 'video' : 'audio');
+      media.preload = 'metadata';
+      media.onloadedmetadata = function() {
+        URL.revokeObjectURL(media.src);
+        document.getElementById('mat-duracao').value = Math.round(media.duration);
+      }
+      media.src = URL.createObjectURL(file);
+    }
+
+    function salvarMaterial() {
+      const titulo = document.getElementById('mat-titulo').value.trim();
+      const duracao = document.getElementById('mat-duracao').value;
+      const file = document.getElementById('mat-file').files[0];
+      const id = document.getElementById('mat-id').value;
+      const status = document.getElementById('status-mat');
+      
+      if(!titulo || !duracao) return alert("Título e Duração são obrigatórios.");
+
+      let payload = {
+        id: id, titulo: titulo, duracao: duracao,
+        arquivoBase64: null, fileName: null, mimeType: null
+      };
+
+      status.innerText = "Salvando dados... Aguarde.";
+      status.style.color = "blue";
+      document.getElementById('btn-salvar-mat').disabled = true;
+
+      if (file) {
+        status.innerText = "Lendo arquivo para upload...";
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          payload.arquivoBase64 = e.target.result.split(',')[1];
+          payload.fileName = file.name;
+          payload.mimeType = file.type;
+          enviarParaServidor(payload, status);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        enviarParaServidor(payload, status);
+      }
+    }
+
+    function enviarParaServidor(payload, statusElem) {
+      const anoAtual = new Date().getFullYear();
+      google.script.run
+        .withSuccessHandler(res => {
+          statusElem.innerText = "Salvo com sucesso!";
+          statusElem.style.color = "green";
+          document.getElementById('btn-salvar-mat').disabled = false;
+          bancoMateriais = res.materiais;
+          renderListaMateriais();
+          resetarFormMaterial();
+        })
+        .salvarMaterialGS(anoAtual, payload);
+    }
+
+    function carregarListaMateriais() {
+      const ul = document.getElementById('lista-materiais');
+      if (ul) ul.innerHTML = "<li>Carregando...</li>";
+      const anoAtual = new Date().getFullYear();
+      google.script.run
+        .withSuccessHandler(lista => { bancoMateriais = lista || []; renderListaMateriais(); })
+        .listarMateriaisGS(anoAtual);
+    }
+
+    function renderListaMateriais() {
+      const ul = document.getElementById('lista-materiais');
+      ul.innerHTML = "";
+      bancoMateriais.forEach(mat => {
+        const iconArquivo = mat.temArquivo ? "💾" : "📝";
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div onclick="carregarParaEdicao('${mat.id}')" style="flex-grow:1;">
+            <strong>${mat.titulo}</strong> (${mat.duracao}s) ${iconArquivo}
+          </div>
+          ${mat.temArquivo ? `<button class="btn btn-info btn-sm" onclick="tocarPlayer('${mat.arquivoId}', '${mat.extensao}', '${mat.titulo}')">▶</button>` : ''}
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    function carregarParaEdicao(id) {
+      const mat = bancoMateriais.find(m => m.id === id);
+      if(!mat) return;
+      document.getElementById('mat-id').value = mat.id;
+      document.getElementById('mat-titulo').value = mat.titulo;
+      document.getElementById('mat-duracao').value = mat.duracao;
+      document.getElementById('btn-salvar-mat').innerText = "Atualizar Material";
+      document.getElementById('status-mat').innerText = mat.temArquivo ? "Arquivo já anexado. Anexar outro o substituirá." : "Material sem arquivo.";
+      document.getElementById('status-mat').style.color = "gray";
+    }
+
+    function tocarPlayer(fileId, ext, titulo) {
+      const aud = document.getElementById('audio-player');
+      const vid = document.getElementById('video-player');
+      aud.pause(); vid.pause(); aud.style.display = 'none'; vid.style.display = 'none';
+      document.getElementById('player-title').innerText = titulo;
+
+      const streamUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
+      const isVideo = ['mp4', 'mov', 'avi'].includes(ext.toLowerCase());
+      const player = isVideo ? vid : aud;
+      
+      player.src = streamUrl;
+      player.style.display = 'block';
+      player.play().catch(err => console.warn("Clique no play manualmente.", err));
+    }
+
+    // --- SEÇÃO 3: MAPAS ---
+    function gerarGradeMapa() {
+  const dtInicio = document.getElementById('mapa-inicio').value;
+  const dtFim = document.getElementById('mapa-fim').value;
+
+  if (!dtInicio || !dtFim) return alert("Selecione o período de Início e Fim.");
+  
+  const linhasTabela = document.querySelectorAll('#tabelaPolitica tbody tr');
+  let dadosPartido = [];
+  let nomePartido = "";
+  let cargoPartido = "";
+
+  // Objetos para rastrear o que já foi mapeado
+  let legendasPreExistentes = {}; // Guarda { "A": "Titulo 1" }
+  let gridPreExistente = {};      // Guarda { "26/08/2026": { "Bloco 1": ["A", "B"] } }
+
+  linhasTabela.forEach(tr => {
+    if (tr.style.display !== "none") {
+      const dataStr = tr.cells[0].innerText;
+      const bloco = tr.cells[1].innerText;
+      const partidoStr = tr.cells[3].innerText;
+      const cargoStr = tr.cells[4].innerText;
+  
+      // Busca a Letra e o Título na Matriz Oculta
+      const rowIndex = tr.getAttribute('data-index');
+      let letraExistente = "";
+      let tituloExistente = "";
+      if (rowIndex !== null && dadosTabela[rowIndex]) {
+        tituloExistente = dadosTabela[rowIndex][6] || "";
+        letraExistente = dadosTabela[rowIndex][8] || "";
+      }
+
+      // Converte data DD/MM/YYYY para comparar
+      const partesData = dataStr.split('/');
+      if (partesData.length === 3) {
+        const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
+        
+        if (dataFormatada >= dtInicio && dataFormatada <= dtFim) {
+          if (!nomePartido) nomePartido = partidoStr;
+          if (!cargoPartido) cargoPartido = cargoStr; 
+          dadosPartido.push({ data: dataStr, bloco: bloco });
+          
+          // Se houver material preenchido, guarda na memória para construir a grade
+          if (letraExistente && tituloExistente) {
+             legendasPreExistentes[letraExistente] = tituloExistente;
+             if (!gridPreExistente[dataStr]) gridPreExistente[dataStr] = {};
+             if (!gridPreExistente[dataStr][bloco]) gridPreExistente[dataStr][bloco] = [];
+             gridPreExistente[dataStr][bloco].push(letraExistente);
+          }
+        }
+      }
+    }
+  });
+
+  if (dadosPartido.length === 0) return alert("Nenhuma inserção encontrada para este filtro/período.");
+
+  // Configurar Interface
+  document.getElementById('mapa-partido-nome').innerText = nomePartido.toUpperCase();
+  document.getElementById('mapa-partido-cargo').innerText = cargoPartido.toUpperCase();
+  document.getElementById('mapa-periodo-texto').innerText = `${dtInicio.split('-').reverse().join('/')} a ${dtFim.split('-').reverse().join('/')}`;
+  const numeroMapa = new Date().getTime().toString().slice(-6);
+  document.getElementById('mapa-numero').innerText = numeroMapa;
+  document.getElementById('container-mapa-gerado').style.display = "block";
+  
+  // REQ 2: Libera o botão de salvar caso o usuário esteja gerando um mapa novo
+  const btnSalvar = document.querySelector('#container-mapa-gerado .btn-success');
+  if (btnSalvar) {
+      btnSalvar.innerText = "Finalizar e Salvar Mapa";
+      btnSalvar.disabled = false;
+  }
+  
+  // Limpar Legenda
+  document.querySelector("#tabela-legendas tbody").innerHTML = "";
+  contadorMateriais = 0;
+  
+  // NOVO: Adiciona as legendas pré-existentes ou apenas a letra 'A' se for um mapa zerado
+  const letrasPre = Object.keys(legendasPreExistentes).sort();
+  if (letrasPre.length > 0) {
+      letrasPre.forEach(letra => {
+          adicionarMaterialLegendaComDados(letra, legendasPreExistentes[letra]);
+      });
+  } else {
+      adicionarMaterialLegenda();
+  }
+
+// Identificar Dias Únicos (Colunas) e ordenar como Data Real
+  let mapaDias = [...new Set(dadosPartido.map(d => d.data))].sort((a, b) => {
+    const [diaA, mesA, anoA] = a.split('/');
+    const [diaB, mesB, anoB] = b.split('/');
+    return new Date(anoA, mesA - 1, diaA) - new Date(anoB, mesB - 1, diaB);
+  });
+
+  // Identificar max de inserções por Bloco/Dia
+  let mapaBlocos = {};
+  dadosPartido.forEach(d => {
+    if (!mapaBlocos[d.bloco]) mapaBlocos[d.bloco] = {};
+    mapaBlocos[d.bloco][d.data] = (mapaBlocos[d.bloco][d.data] || 0) + 1;
+  });
+
+  const thead = document.querySelector("#tabela-grade-mapa thead");
+  let theadHTML = `<tr style="background: #f4f5f7;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">Bloco</th>`;
+  mapaDias.forEach(dia => {
+    theadHTML += `<th style="border: 1px solid #ddd; padding: 8px;">${dia.substring(0,5)}</th>`;
+  });
+  theadHTML += `</tr>`;
+  thead.innerHTML = theadHTML;
+
+  // Montar <tbody>
+  const tbody = document.querySelector("#tabela-grade-mapa tbody");
+  tbody.innerHTML = "";
+  
+  // Controlador para não repetir a mesma letra caso haja múltiplas inserções no mesmo bloco
+  let controleUsoGrid = {};
+
+  Object.keys(mapaBlocos).sort().forEach(blocoNome => {
+    const maxInsercoes = Math.max(...Object.values(mapaBlocos[blocoNome]));
+
+    for (let i = 1; i <= maxInsercoes; i++) {
+      let trHTML = `<tr><td style="border: 1px solid #ddd; padding: 8px; font-weight:bold;">${blocoNome}</td>`;
+      
+      mapaDias.forEach(dia => {
+        if (mapaBlocos[blocoNome][dia] >= i) {
+          
+          // NOVO: Puxa a letra que já estava na matriz oculta
+          let letraInjetada = "";
+          if (gridPreExistente[dia] && gridPreExistente[dia][blocoNome]) {
+              if (!controleUsoGrid[dia]) controleUsoGrid[dia] = {};
+              if (!controleUsoGrid[dia][blocoNome]) controleUsoGrid[dia][blocoNome] = 0;
+              
+              let indexUsado = controleUsoGrid[dia][blocoNome];
+              if (indexUsado < gridPreExistente[dia][blocoNome].length) {
+                  letraInjetada = gridPreExistente[dia][blocoNome][indexUsado];
+                  controleUsoGrid[dia][blocoNome]++;
+              }
+          }
+
+          trHTML += `<td style="border: 1px solid #ddd; padding: 4px;">
+                      <input type="text" class="input-letra-mapa" data-data="${dia}" data-bloco="${blocoNome}" 
+                      style="width: 30px; text-align: center; text-transform: uppercase; border: 1px solid #ccc; border-radius: 3px;"
+                      maxlength="2" value="${letraInjetada}" oninput="verificarGrade60s()">
+                     </td>`;
+
+        } else {
+          trHTML += `<td style="border: 1px solid #ddd; background:#fafafa;">-</td>`;
+        }
+      });
+      trHTML += `</tr>`;
+      tbody.innerHTML += trHTML;
+    }
+  });
+}
+
+
+// 1. GERADOR DA LETRA (A, B ... Z, AA, AB...)
+function obterLetraPeca(index) {
+  let letra = '';
+  let temp = index;
+  while (temp >= 0) {
+    let resto = temp % 26;
+    letra = String.fromCharCode(65 + resto) + letra;
+    temp = Math.floor(temp / 26) - 1;
+  }
+  return letra;
+}
+// Função Auxiliar
+function atualizarDuracaoLegenda(selectElem) {
+  const duracao = selectElem.options[selectElem.selectedIndex].getAttribute('data-duracao');
+  const tdDuracao = selectElem.closest('tr').querySelector('.td-duracao');
+  tdDuracao.innerText = duracao ? duracao + 's' : '-';
+}
+
+// Verifica a grade ao vivo e bloqueia a próxima célula se for 60s
+function verificarGrade60s() {
+   const mapaDuracao = {};
+   document.querySelectorAll('.select-material').forEach(sel => {
+      const letra = sel.getAttribute('data-letra');
+      const opt = sel.options[sel.selectedIndex];
+      if(opt) mapaDuracao[letra] = opt.getAttribute('data-duracao');
+   });
+
+   const inputs = Array.from(document.querySelectorAll('.input-letra-mapa'));
+   
+   // 1. Limpa os bloqueios (caso o usuário tenha apagado o 60s)
+   inputs.forEach(inp => {
+       if(inp.getAttribute('data-bloqueado-60s') === "true") {
+           inp.disabled = false;
+           inp.style.backgroundColor = "";
+           inp.value = inp.getAttribute('data-valor-antigo') || "";
+           inp.removeAttribute('data-bloqueado-60s');
+       }
+   });
+
+   // 2. Agrupa por dia e bloco (Coluna vertical do Mapa)
+   const grupos = {};
+   inputs.forEach(inp => {
+       const chave = inp.getAttribute('data-data') + '-' + inp.getAttribute('data-bloco');
+       if(!grupos[chave]) grupos[chave] = [];
+       grupos[chave].push(inp);
+   });
+
+   // 3. Aplica a trava visual (-) na próxima inserção
+   Object.values(grupos).forEach(lista => {
+       let pularProximo = false;
+       lista.forEach(inp => {
+           if (pularProximo) {
+               if (inp.value !== "-") inp.setAttribute('data-valor-antigo', inp.value);
+               inp.disabled = true;
+               inp.style.backgroundColor = "#e9ecef";
+               inp.value = "-";
+               inp.setAttribute('data-bloqueado-60s', "true");
+               pularProximo = false;
+           } else {
+               const letra = inp.value.toUpperCase();
+               if (mapaDuracao[letra] == 60) pularProximo = true;
+           }
+       });
+   });
+}
+
+
+// ADICIONAR LINHA NA LEGENDA COM DADOS (Usado na Autoconstrução com o gatilho verificarGrade60s)
+function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
+  const tbody = document.querySelector("#tabela-legendas tbody");
+  let duracaoEncontrada = "";
+  let options = bancoMateriais.map(m => {
+      const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
+      if (isSelected) duracaoEncontrada = m.duracao; 
+      return `<option value="${m.titulo}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+  }).join('');
+  
+  // AQUI ADICIONAMOS O verificarGrade60s() NO ONCHANGE
+  let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
+                      <option value="" data-duracao="">Selecione...</option>
+                      ${options}
+                    </select>`;
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraEspecifica}</td>
+    <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">${duracaoEncontrada ? duracaoEncontrada + 's' : '-'}</td>
+  `;
+  tbody.appendChild(tr);
+  contadorMateriais++;
+}
+
+// 2. ADICIONAR LINHA NA LEGENDA
+function adicionarMaterialLegenda() {
+  const tbody = document.querySelector("#tabela-legendas tbody");
+  const letraPeca = obterLetraPeca(contadorMateriais);
+  let options = bancoMateriais.map(m => `<option value="${m.titulo}" data-duracao="${m.duracao}">${m.titulo}</option>`).join('');
+  
+  // verificarGrade60s() NO ONCHANGE
+  let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
+                      <option value="" data-duracao="">Selecione...</option>
+                      ${options}
+                    </select>`;
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraPeca}</td>
+    <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">-</td>
+  `;
+  tbody.appendChild(tr);
+  contadorMateriais++;
+}
+
+// 4. FINALIZAR MAPA
+function finalizarMapa() {
+  const selects = document.querySelectorAll('.select-material');
+  const mapaLegenda = {};
+  let validacaoLegenda = true;
+
+  selects.forEach(sel => {
+    const letra = sel.getAttribute('data-letra');
+    const titulo = sel.value;
+    const duracao = sel.options[sel.selectedIndex]?.getAttribute('data-duracao');
+    
+    if (titulo) {
+      mapaLegenda[letra] = { titulo: titulo, duracao: duracao };
+    } else {
+      validacaoLegenda = false;
+    }
+  });
+
+  if (!validacaoLegenda) {
+    if (!confirm("Há letras na legenda sem material selecionado. Deseja continuar assim?")) return;
+  }
+
+  const inputsGrade = document.querySelectorAll('.input-letra-mapa');
+  let insercoesDigitadas = {};
+
+  inputsGrade.forEach(input => {
+    // Ignora os inputs que o sistema bloqueou (O "-" do 60s)
+    if (input.disabled) return; 
+    
+    const letra = input.value.toUpperCase().trim();
+    if (!letra || letra === "-") return;
+
+    const legendaItem = mapaLegenda[letra];
+    if (!legendaItem) return alert(`A letra '${letra}' inserida na grade não possui material na legenda!`);
+
+    const data = input.getAttribute('data-data');
+    const bloco = input.getAttribute('data-bloco');
+
+    if (!insercoesDigitadas[data]) insercoesDigitadas[data] = {};
+    if (!insercoesDigitadas[data][bloco]) insercoesDigitadas[data][bloco] = [];
+    
+    insercoesDigitadas[data][bloco].push({ titulo: legendaItem.titulo, letra: letra, duracao: legendaItem.duracao });
+  });
+
+  dadosTabela.forEach(l => l[7] = false); // Limpa cancelamentos gerais
+  const linhasTabela = document.querySelectorAll('#tabelaPolitica tbody tr');
+  let blocoEmCancelamento = null;
+
+  linhasTabela.forEach(tr => {
+    const rowIndex = tr.getAttribute('data-index');
+    if (rowIndex === null || !dadosTabela[rowIndex]) return;
+
+    // A MÁGICA ACONTECE AQUI: O 60s só afeta as linhas ativas no seu filtro (seu partido!)
+    if (tr.style.display === "none") return;
+
+    const dataStr = tr.cells[0].innerText;
+    const bloco = tr.cells[1].innerText;
+    const chaveAtual = `${dataStr}-${bloco}`;
+
+    // Segurança: se o bloco mudou, reseta o cancelamento (evita vazar para outro dia/bloco)
+    if (blocoEmCancelamento && blocoEmCancelamento !== chaveAtual) {
+        blocoEmCancelamento = null;
+    }
+
+    if (blocoEmCancelamento === chaveAtual) {
+        dadosTabela[rowIndex][7] = true; 
+        dadosTabela[rowIndex][5] = ""; 
+        dadosTabela[rowIndex][6] = ""; 
+        dadosTabela[rowIndex][8] = ""; 
+        blocoEmCancelamento = null; 
+        return; 
+    }
+
+    // Aplica os dados do mapa na tabela principal
+    if (insercoesDigitadas[dataStr] && insercoesDigitadas[dataStr][bloco] && insercoesDigitadas[dataStr][bloco].length > 0) {
+        const itemAtribuido = insercoesDigitadas[dataStr][bloco].shift();
+        
+        dadosTabela[rowIndex][5] = itemAtribuido.duracao;
+        dadosTabela[rowIndex][6] = itemAtribuido.titulo;
+        dadosTabela[rowIndex][8] = itemAtribuido.letra; 
+        
+        if (itemAtribuido.duracao == 60 || itemAtribuido.duracao == '60') {
+            blocoEmCancelamento = chaveAtual;
+        }
+    } else {
+        // Se ficou vazio, reseta pra 30s limpo
+        dadosTabela[rowIndex][5] = 30;
+        dadosTabela[rowIndex][6] = "";
+        dadosTabela[rowIndex][8] = "";
+    }
+  });
+
+  renderTabelaPrincipal();
+  salvarMapaNoDrive();
+
+}
+
+// 5. ENVIAR PARA O SERVIDOR
+function salvarMapaNoDrive() {
+  const btn = document.querySelector('#container-mapa-gerado .btn-success');
+  const nomePartido = document.getElementById('mapa-partido-nome').innerText;
+  const cargoPartido = document.getElementById('mapa-partido-cargo').innerText;
+  const numeroMapa = document.getElementById('mapa-numero').innerText;
+  const anoAtual = getAnoDaTabela();
+  
+  btn.innerText = "Salvando no Servidor...";
+  btn.disabled = true;
+
+  // 1. Prepara a Legenda Limpa (Extrai o texto dos Selects)
+  const tabelaLegenda = document.getElementById('tabela-legendas').cloneNode(true);
+  const selects = tabelaLegenda.querySelectorAll('select');
+  selects.forEach(select => {
+      const span = document.createElement('span');
+      span.innerText = select.selectedIndex >= 0 ? select.options[select.selectedIndex].text : "";
+      select.parentNode.replaceChild(span, select);
+  });
+  const legendaHTML = `<div style="margin-bottom: 15px;"><h4 style="margin-top: 0;">Legenda de Materiais</h4>${tabelaLegenda.outerHTML}</div>`;
+
+  // 2. Fatiamento (Chunking) da Tabela do Mapa para o PDF
+  const theadCells = Array.from(document.querySelectorAll('#tabela-grade-mapa thead th'));
+  const tbodyRows = Array.from(document.querySelectorAll('#tabela-grade-mapa tbody tr'));
+  
+  const totalDias = theadCells.length - 1; // Coluna 0 é sempre o "Bloco"
+  const DIAS_POR_PAGINA = 7; // Limite perfeito para caber no A4 Landscape sem esmagar
+  const totalPaginas = Math.ceil(totalDias / DIAS_POR_PAGINA) || 1;
+
+  let paginasHTML = "";
+
+  for (let p = 0; p < totalPaginas; p++) {
+     const startIdx = p * DIAS_POR_PAGINA;
+     const endIdx = startIdx + DIAS_POR_PAGINA;
+
+     // Cabeçalho da respectiva Página (Com Numeração)
+     const pageHeader = `
+     <div style="text-align: right; font-weight: bold; font-size: 12px; margin-bottom: 5px;">Página ${p + 1} de ${totalPaginas}</div>
+     <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+       <h3 style="margin: 0;">MAPA DE MÍDIA Nº ${numeroMapa} - ${nomePartido} - ${cargoPartido}</h3>
+       <p style="margin: 5px 0;">Período: ${document.getElementById('mapa-periodo-texto').innerText}</p>
+     </div>`;
+
+     // Fatiando as colunas (Dias) da Grade Principal
+     let gradeHTML = `<h4 style="margin-top: 0;">Grade de Distribuição</h4>
+     <table style="width: 100%; border-collapse: collapse; text-align: center;"><thead><tr style="background: #f4f5f7;">`;
+     gradeHTML += `<th style="border: 1px solid #000; padding: 5px;">Bloco</th>`;
+     
+     for(let c = startIdx + 1; c <= Math.min(endIdx, totalDias); c++) {
+         gradeHTML += `<th style="border: 1px solid #000; padding: 5px;">${theadCells[c].innerText}</th>`;
+     }
+     gradeHTML += `</tr></thead><tbody>`;
+
+     tbodyRows.forEach(row => {
+         const cells = Array.from(row.querySelectorAll('td'));
+         gradeHTML += `<tr>`;
+         gradeHTML += `<td style="border: 1px solid #000; padding: 5px; font-weight:bold;">${cells[0].innerText}</td>`; // Bloco fixo
+         
+         for(let c = startIdx + 1; c <= Math.min(endIdx, totalDias); c++) {
+             let cellVal = "";
+             const input = cells[c].querySelector('input');
+             if(input) cellVal = input.value.toUpperCase();
+             else cellVal = cells[c].innerText;
+
+             gradeHTML += `<td style="border: 1px solid #000; padding: 5px;">${cellVal}</td>`;
+         }
+         gradeHTML += `</tr>`;
+     });
+     gradeHTML += `</tbody></table>`;
+
+     // Layout Side-by-Side (Tabelas seguram melhor a formatação em PDFs gerados por Script do que Flexbox)
+     let layoutFinal = `
+     <table style="width: 100%; border: none;">
+        <tr>
+           <td style="width: 35%; vertical-align: top; padding-right: 15px;">${legendaHTML}</td>
+           <td style="width: 65%; vertical-align: top;">${gradeHTML}</td>
+        </tr>
+     </table>`;
+
+     // Injeta CSS para quebrar a página (Exceto na última)
+     let quebraPagina = (p < totalPaginas - 1) ? 'page-break-after: always;' : '';
+     paginasHTML += `<div style="${quebraPagina}">${pageHeader}${layoutFinal}</div>`;
+  }
+
+  google.script.run
+    .withSuccessHandler(() => {
+      alert("Mapa salvo com sucesso! A Tabela Principal foi atualizada com os títulos.");
+      btn.innerText = "✅ Mapa Salvo e Finalizado";
+      if (typeof salvarProgramacao === 'function') salvarProgramacao(); 
+    })
+    .withFailureHandler(erro => {
+      alert("Erro ao salvar o mapa: " + erro);
+      btn.innerText = "✅ Finalizar e Salvar Mapa";
+      btn.disabled = false;
+    })
+    .salvarMapaGS(anoAtual, `${nomePartido}_${cargoPartido}`, paginasHTML, numeroMapa);
+}
+// ==========================================
+    // 4. FUNÇÕES DE ENVIO E E-MAIL
+    // ==========================================
+
+    let listaMapasDrive = [];
+
+    // Adaptação: Atualiza a aba para recarregar dados específicos ao entrar na seção 4
+    const originalSwitchTab = switchTab;
+    switchTab = function(tabId) {
+       originalSwitchTab(tabId);
+       if (tabId === 'envios') {
+          carregarDadosEnvio();
+       }
+    };
+
+    function carregarDadosEnvio() {
+      const anoSelecionado = document.getElementById('select-ano').value;
+      if (!anoSelecionado) return;
+
+      // 1. Carrega os Contatos
+      google.script.run
+        .withSuccessHandler(texto => {
+           document.getElementById('lista-emails-padrao').value = texto;
+           document.getElementById('email-para').value = texto; // Auto-preenche o campo "Para"
+        })
+        .carregarContatosGS(anoSelecionado);
+
+      // 2. Carrega os Mapas
+      document.getElementById('check-list-mapas').innerHTML = "Buscando mapas no Drive...";
+      google.script.run
+        .withSuccessHandler(mapas => {
+           listaMapasDrive = mapas;
+           renderizarChecksEnvio();
+        })
+        .listarMapasGS(anoSelecionado);
+
+      // 3. Os materiais já estão na variável global 'bancoMateriais', basta renderizar
+      renderizarChecksEnvio();
+    }
+
+    function salvarContatos() {
+      const anoSelecionado = document.getElementById('select-ano').value;
+      const texto = document.getElementById('lista-emails-padrao').value;
+      const status = document.getElementById('status-contatos');
+      status.innerText = "Salvando...";
+      
+      google.script.run
+        .withSuccessHandler(() => {
+           status.innerText = "Salvo com sucesso!";
+           document.getElementById('email-para').value = texto; // Atualiza o envio atual
+           setTimeout(() => status.innerText = "", 3000);
+        })
+        .salvarContatosGS(anoSelecionado, texto);
+    }
+
+    function renderizarChecksEnvio() {
+      // Renderiza Mapas
+      const divMapas = document.getElementById('check-list-mapas');
+      divMapas.innerHTML = "";
+      if (listaMapasDrive.length === 0) {
+         divMapas.innerHTML = "<span style='color:gray'>Nenhum mapa salvo neste ano.</span>";
+      } else {
+         listaMapasDrive.forEach(mapa => {
+            divMapas.innerHTML += `
+              <label style="cursor:pointer; display:block;">
+                <input type="checkbox" class="chk-envio chk-mapa" value="${mapa.id}" data-nome="${mapa.nome}" onchange="atualizarTemplateEmail()"> 
+                📄 ${mapa.nome} <span style="color:gray; font-size:11px;">(${mapa.data})</span>
+              </label>`;
+         });
+      }
+
+      // Renderiza Materiais
+      const divMats = document.getElementById('check-list-materiais');
+      divMats.innerHTML = "";
+      const matsComArquivo = bancoMateriais.filter(m => m.temArquivo);
+      if (matsComArquivo.length === 0) {
+         divMats.innerHTML = "<span style='color:gray'>Nenhuma mídia cadastrada com arquivo.</span>";
+      } else {
+         matsComArquivo.forEach(mat => {
+            divMats.innerHTML += `
+              <label style="cursor:pointer; display:block;">
+                <input type="checkbox" class="chk-envio chk-mat" value="${mat.arquivoId}" data-titulo="${mat.titulo}" data-duracao="${mat.duracao}" onchange="atualizarTemplateEmail()"> 
+                🎬 ${mat.titulo} (${mat.duracao}s)
+              </label>`;
+         });
+      }
+    }
+
+    function atualizarTemplateEmail() {
+       let mapasMarcados = Array.from(document.querySelectorAll('.chk-mapa:checked'));
+       let matsMarcados = Array.from(document.querySelectorAll('.chk-mat:checked'));
+
+       let assuntoPadrão = "Arquivos de Campanha";
+       let corpoPadrão = "Olá, tudo bem?\n\nSegue em anexo o material solicitado para veiculação:\n\n";
+
+       // Se tiver mapa, extrai os dados do nome (ex: MAPA_123456_PARTIDO_CARGO.pdf)
+       if (mapasMarcados.length > 0) {
+           let nomePrimeiroMapa = mapasMarcados[0].getAttribute('data-nome');
+           let partes = nomePrimeiroMapa.replace('.pdf', '').split('_');
+           
+           if (partes.length >= 4) {
+               let numMapa = partes[1];
+               let partido = partes[2];
+               let cargo = partes[3];
+               
+               assuntoPadrão = `Mapa de Mídia nº ${numMapa} - ${partido} - ${cargo}`;
+               corpoPadrão += `📄 MAPA DE MÍDIA:\n- Número do Mapa: ${numMapa}\n- Partido/Coligação: ${partido}\n- Cargo: ${cargo}\n\n`;
+           } else {
+               assuntoPadrão = `Mapa de Mídia - ${nomePrimeiroMapa}`;
+               corpoPadrão += `📄 MAPAS:\n`;
+               mapasMarcados.forEach(m => corpoPadrão += `- ${m.getAttribute('data-nome')}\n`);
+               corpoPadrão += `\n`;
+           }
+       }
+
+       if (matsMarcados.length > 0) {
+           if (mapasMarcados.length === 0) assuntoPadrão = "Mídias de Campanha";
+           
+           corpoPadrão += `🎬 MATERIAIS / MÍDIAS INCLUSAS:\n`;
+           matsMarcados.forEach(chk => {
+              corpoPadrão += `- ${chk.getAttribute('data-titulo')} (${chk.getAttribute('data-duracao')} segundos)\n`;
+           });
+       }
+
+       corpoPadrão += "\nFicamos à disposição para qualquer dúvida.\n\nAtenciosamente.";
+
+       document.getElementById('email-assunto').value = assuntoPadrão;
+       document.getElementById('email-corpo').value = corpoPadrão;
+    }
+
+    function dispararEmail() {
+       const para = document.getElementById('email-para').value.trim();
+       const cc = document.getElementById('email-cc').value.trim();
+       const assunto = document.getElementById('email-assunto').value.trim();
+       const corpo = document.getElementById('email-corpo').value.trim();
+       
+       const btn = document.getElementById('btn-enviar-email');
+
+       if (!para) return alert("O campo 'Para (Destinatários)' não pode estar vazio.");
+       if (!assunto) return alert("O assunto não pode estar vazio.");
+
+       // Pega os IDs de todos os checkboxes marcados (Mapas e Materiais)
+       let anexosIds = [];
+       document.querySelectorAll('.chk-envio:checked').forEach(chk => {
+           anexosIds.push(chk.value);
+       });
+
+       if (anexosIds.length === 0) {
+           if (!confirm("Você não selecionou nenhum anexo. Deseja enviar o e-mail mesmo assim?")) return;
+       }
+
+       btn.innerText = "Enviando...";
+       btn.disabled = true;
+
+       google.script.run
+         .withSuccessHandler(() => {
+             alert("E-mail enviado com sucesso!");
+             btn.innerText = "📤 Enviar E-mail";
+             btn.disabled = false;
+         })
+         .withFailureHandler(erro => {
+             alert("Erro ao enviar: " + erro);
+             btn.innerText = "📤 Enviar E-mail";
+             btn.disabled = false;
+         })
+         .enviarEmailGS(para, cc, assunto, corpo, anexosIds);
+    }
+
+
+  </script>
+</body>
+</html>
