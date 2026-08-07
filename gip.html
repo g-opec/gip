@@ -1005,7 +1005,7 @@ function tocarPlayer(fileId, ext, titulo) {
   document.querySelector("#tabela-legendas tbody").innerHTML = "";
   contadorMateriais = 0;
   
-  // NOVO: Adiciona as legendas pré-existentes ou apenas a letra 'A' se for um mapa zerado
+  // Adiciona as legendas pré-existentes ou apenas a letra 'A' se for um mapa zerado
   const letrasPre = Object.keys(legendasPreExistentes).sort();
   if (letrasPre.length > 0) {
       letrasPre.forEach(letra => {
@@ -1183,9 +1183,7 @@ function adicionarMaterialLegenda() {
   const letraPeca = obterLetraPeca(contadorMateriais);
   let options = bancoMateriais.map(m => {
     const tituloCompleto = m.tituloCompleto || m.titulo; // Fallback caso seja arquivo antigo
-    const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
-    if (isSelected) duracaoEncontrada = m.duracao; 
-    return `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+    `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}">${m.titulo}</option>`;
 }).join('');
   
   // verificarGrade60s() NO ONCHANGE
