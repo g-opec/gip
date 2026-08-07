@@ -770,21 +770,30 @@ function getAnoDaTabela() {
     }
 
     function salvarMaterial() {
-  const tituloSimples = document.getElementById('mat-titulo').value.trim();
-  const duracao = document.getElementById('mat-duracao').value;
-  const file = document.getElementById('mat-file').files[0];
-  const id = document.getElementById('mat-id').value;
-  const status = document.getElementById('status-mat');
+  // 1. Mapeia os elementos de forma segura
+  const elTitulo = document.getElementById('mat-titulo');
+  const elDuracao = document.getElementById('mat-duracao');
+  const elId = document.getElementById('mat-id'); // Input oculto
+  const elFile = document.getElementById('mat-file');
+  const elStatus = document.getElementById('status-mat');
+  const elBtnSalvar = document.getElementById('btn-salvar-mat');
   
-  // 1. Captura Partido e Cargo diretamente do Filtro da Tabela
-  const filtroAtivo = document.getElementById('input-filtro-partido').value.trim();
-  
-  // Trava de segurança: Exige que a tabela esteja filtrada antes de salvar material
+  const elFiltro = document.getElementById('input-filtro-partido'); 
+  const elAno = document.getElementById('select-ano');
+
+  // 2. Extrai os valores (com fallbacks vazios se o elemento não existir)
+  const tituloSimples = elTitulo ? elTitulo.value.trim() : "";
+  const duracao = elDuracao ? elDuracao.value : "30";
+  const id = elId ? elId.value : "";
+  const file = (elFile && elFile.files.length > 0) ? elFile.files[0] : null;
+  const filtroAtivo = elFiltro ? elFiltro.value.trim() : "";
+  const ano = (elAno && elAno.value) ? elAno.value : new Date().getFullYear().toString();
+
+  // 3. Validação do Filtro (Partido - Cargo)
   if (!filtroAtivo || !filtroAtivo.includes('-')) {
     return alert("Por favor, filtre a tabela por 'Partido - Cargo' antes de adicionar ou salvar um material.");
   }
 
-  // Quebra a string "PARTIDO - CARGO" em duas variáveis
   const partesFiltro = filtroAtivo.split('-');
   const partido = partesFiltro[0].trim();
   const cargo = partesFiltro[1].trim();
@@ -793,8 +802,7 @@ function getAnoDaTabela() {
       return alert("Título e Duração são obrigatórios. Verifique também se o filtro está correto.");
   }
 
-  // 2. Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
-  const ano = document.getElementById('select-ano').value || new Date().getFullYear().toString();
+  // 4. Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
   const ano2Digitos = ano.toString().slice(-2);
   const tituloCompleto = `POLI${ano2Digitos} - ${partido.toUpperCase()} ${cargo.toUpperCase()} ${tituloSimples.toUpperCase()}`;
 
@@ -808,23 +816,28 @@ function getAnoDaTabela() {
     arquivoBase64: null, fileName: null, mimeType: null
   };
 
-  status.innerText = "Salvando dados... Aguarde.";
-  status.style.color = "blue";
-  document.getElementById('btn-salvar-mat').disabled = true;
+  // 5. Atualiza Interface Visual
+  if (elStatus) {
+    elStatus.innerText = "Salvando dados... Aguarde.";
+    elStatus.style.color = "blue";
+  }
+  if (elBtnSalvar) elBtnSalvar.disabled = true;
 
+  // 6. Processamento do Arquivo ou Salvamento Direto
   if (file) {
-    status.innerText = "Lendo arquivo para upload...";
+    if (elStatus) elStatus.innerText = "Lendo arquivo para upload...";
     const reader = new FileReader();
     reader.onload = function(e) {
       const ext = file.name.split('.').pop();
       payload.arquivoBase64 = e.target.result.split(',')[1];
-      payload.fileName = `${tituloCompleto}.${ext}`; // Salva com o Titulo Completo gerado
+      payload.fileName = `${tituloCompleto}.${ext}`;
       payload.mimeType = file.type;
-      enviarParaServidor(payload, status);
+      enviarParaServidor(payload, elStatus);
     };
     reader.readAsDataURL(file);
   } else {
-    enviarParaServidor(payload, status);
+    // Quando entra aqui (sem arquivo), agora funcionará sem travar!
+    enviarParaServidor(payload, elStatus);
   }
 }
 
