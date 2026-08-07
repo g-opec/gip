@@ -90,17 +90,6 @@
   </div>
 </div>
 
-<div style="display: flex; gap: 10px; margin-top: 10px;">
-  <div style="flex: 1;">
-    <label><strong>Partido/Coligação *</strong></label><br>
-    <input type="text" id="mat-partido" style="width: 100%;" list="listaPartidos" required>
-  </div>
-  <div style="flex: 1;">
-    <label><strong>Cargo *</strong></label><br>
-    <input type="text" id="mat-cargo" style="width: 100%;" required>
-  </div>
-</div>
-
 <div style="margin-top: 10px;">
   <label><strong>Título Simples do Material *</strong></label><br>
   <input type="text" id="mat-titulo" style="width: 100%;" required>
@@ -782,16 +771,29 @@ function getAnoDaTabela() {
 
     function salvarMaterial() {
   const tituloSimples = document.getElementById('mat-titulo').value.trim();
-  const partido = document.getElementById('mat-partido').value.trim();
-  const cargo = document.getElementById('mat-cargo').value.trim();
   const duracao = document.getElementById('mat-duracao').value;
   const file = document.getElementById('mat-file').files[0];
   const id = document.getElementById('mat-id').value;
   const status = document.getElementById('status-mat');
   
-  if(!tituloSimples || !duracao || !partido || !cargo) return alert("Título, Partido, Cargo e Duração são obrigatórios.");
+  // 1. Captura Partido e Cargo diretamente do Filtro da Tabela
+  const filtroAtivo = document.getElementById('input-filtro-partido').value.trim();
+  
+  // Trava de segurança: Exige que a tabela esteja filtrada antes de salvar material
+  if (!filtroAtivo || !filtroAtivo.includes('-')) {
+    return alert("Por favor, filtre a tabela por 'Partido - Cargo' antes de adicionar ou salvar um material.");
+  }
 
-  // Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
+  // Quebra a string "PARTIDO - CARGO" em duas variáveis
+  const partesFiltro = filtroAtivo.split('-');
+  const partido = partesFiltro[0].trim();
+  const cargo = partesFiltro[1].trim();
+  
+  if(!tituloSimples || !duracao || !partido || !cargo) {
+      return alert("Título e Duração são obrigatórios. Verifique também se o filtro está correto.");
+  }
+
+  // 2. Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
   const ano = document.getElementById('select-ano').value || new Date().getFullYear().toString();
   const ano2Digitos = ano.toString().slice(-2);
   const tituloCompleto = `POLI${ano2Digitos} - ${partido.toUpperCase()} ${cargo.toUpperCase()} ${tituloSimples.toUpperCase()}`;
