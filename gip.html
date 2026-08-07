@@ -83,21 +83,32 @@
           
           <div style="display:flex; flex-direction:column; gap: 10px;">
             <div>
-              <label><strong>Arquivo (Opcional)</strong></label><br>
-              <div style="display: flex; gap: 5px;">
-                <input type="file" id="mat-file" accept="audio/*, video/*" style="flex-grow:1;">
-                <button class="btn btn-info" onclick="extrairMetadados()">Extrair Dados</button>
-              </div>
-            </div>
-            
-            <div>
-              <label><strong>Título do Material *</strong></label><br>
-              <input type="text" id="mat-titulo" style="width: 100%;" required>
-            </div>
-            
-            <div>
-              <label><strong>Duração (Segundos) *</strong></label><br>
-              <select id="mat-duracao" style="width: 100px;" required>
+  <label><strong>Arquivo (Opcional)</strong></label><br>
+  <div style="display: flex; gap: 5px;">
+    <input type="file" id="mat-file" accept="audio/*, video/*" style="flex-grow:1;">
+    <button class="btn btn-info" onclick="extrairMetadados()">Extrair Dados</button>
+  </div>
+</div>
+
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+  <div style="flex: 1;">
+    <label><strong>Partido/Coligação *</strong></label><br>
+    <input type="text" id="mat-partido" style="width: 100%;" list="listaPartidos" required>
+  </div>
+  <div style="flex: 1;">
+    <label><strong>Cargo *</strong></label><br>
+    <input type="text" id="mat-cargo" style="width: 100%;" required>
+  </div>
+</div>
+
+<div style="margin-top: 10px;">
+  <label><strong>Título Simples do Material *</strong></label><br>
+  <input type="text" id="mat-titulo" style="width: 100%;" required>
+</div>
+
+<div style="margin-top: 10px;">
+  <label><strong>Duração (Segundos) *</strong></label><br>
+  <select id="mat-duracao" style="width: 100px;" required>
                 <option value="30">30s</option>
                 <option value="60">60s</option>
               </select>  
@@ -744,13 +755,15 @@ function getAnoDaTabela() {
     let bancoMateriais = [];
 
     function resetarFormMaterial() {
-      document.getElementById('mat-id').value = "";
-      document.getElementById('mat-titulo').value = "";
-      document.getElementById('mat-duracao').value = "";
-      document.getElementById('mat-file').value = "";
-      document.getElementById('status-mat').innerText = "";
-      document.getElementById('btn-salvar-mat').innerText = "Salvar Material";
-    }
+  document.getElementById('mat-id').value = "";
+  document.getElementById('mat-titulo').value = "";
+  document.getElementById('mat-partido').value = "";
+  document.getElementById('mat-cargo').value = "";
+  document.getElementById('mat-duracao').value = "30";
+  document.getElementById('mat-file').value = "";
+  document.getElementById('status-mat').innerText = "";
+  document.getElementById('btn-salvar-mat').innerText = "Salvar Material";
+}
 
     function extrairMetadados() {
       const file = document.getElementById('mat-file').files[0];
@@ -768,37 +781,50 @@ function getAnoDaTabela() {
     }
 
     function salvarMaterial() {
-      const titulo = document.getElementById('mat-titulo').value.trim();
-      const duracao = document.getElementById('mat-duracao').value;
-      const file = document.getElementById('mat-file').files[0];
-      const id = document.getElementById('mat-id').value;
-      const status = document.getElementById('status-mat');
-      
-      if(!titulo || !duracao) return alert("Título e Duração são obrigatórios.");
+  const tituloSimples = document.getElementById('mat-titulo').value.trim();
+  const partido = document.getElementById('mat-partido').value.trim();
+  const cargo = document.getElementById('mat-cargo').value.trim();
+  const duracao = document.getElementById('mat-duracao').value;
+  const file = document.getElementById('mat-file').files[0];
+  const id = document.getElementById('mat-id').value;
+  const status = document.getElementById('status-mat');
+  
+  if(!tituloSimples || !duracao || !partido || !cargo) return alert("Título, Partido, Cargo e Duração são obrigatórios.");
 
-      let payload = {
-        id: id, titulo: titulo, duracao: duracao,
-        arquivoBase64: null, fileName: null, mimeType: null
-      };
+  // Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
+  const ano = document.getElementById('select-ano').value || new Date().getFullYear().toString();
+  const ano2Digitos = ano.toString().slice(-2);
+  const tituloCompleto = `POLI${ano2Digitos} - ${partido.toUpperCase()} ${cargo.toUpperCase()} ${tituloSimples.toUpperCase()}`;
 
-      status.innerText = "Salvando dados... Aguarde.";
-      status.style.color = "blue";
-      document.getElementById('btn-salvar-mat').disabled = true;
+  let payload = {
+    id: id, 
+    titulo: tituloSimples, 
+    tituloCompleto: tituloCompleto,
+    partido: partido,
+    cargo: cargo,
+    duracao: duracao,
+    arquivoBase64: null, fileName: null, mimeType: null
+  };
 
-      if (file) {
-        status.innerText = "Lendo arquivo para upload...";
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          payload.arquivoBase64 = e.target.result.split(',')[1];
-          payload.fileName = file.name;
-          payload.mimeType = file.type;
-          enviarParaServidor(payload, status);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        enviarParaServidor(payload, status);
-      }
-    }
+  status.innerText = "Salvando dados... Aguarde.";
+  status.style.color = "blue";
+  document.getElementById('btn-salvar-mat').disabled = true;
+
+  if (file) {
+    status.innerText = "Lendo arquivo para upload...";
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const ext = file.name.split('.').pop();
+      payload.arquivoBase64 = e.target.result.split(',')[1];
+      payload.fileName = `${tituloCompleto}.${ext}`; // Salva com o Titulo Completo gerado
+      payload.mimeType = file.type;
+      enviarParaServidor(payload, status);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    enviarParaServidor(payload, status);
+  }
+}
 
     function enviarParaServidor(payload, statusElem) {
       const anoAtual = new Date().getFullYear();
@@ -840,30 +866,58 @@ function getAnoDaTabela() {
     }
 
     function carregarParaEdicao(id) {
-      const mat = bancoMateriais.find(m => m.id === id);
-      if(!mat) return;
-      document.getElementById('mat-id').value = mat.id;
-      document.getElementById('mat-titulo').value = mat.titulo;
-      document.getElementById('mat-duracao').value = mat.duracao;
-      document.getElementById('btn-salvar-mat').innerText = "Atualizar Material";
-      document.getElementById('status-mat').innerText = mat.temArquivo ? "Arquivo já anexado. Anexar outro o substituirá." : "Material sem arquivo.";
-      document.getElementById('status-mat').style.color = "gray";
-    }
+  const mat = bancoMateriais.find(m => m.id === id);
+  if(!mat) return;
+  document.getElementById('mat-id').value = mat.id;
+  document.getElementById('mat-titulo').value = mat.titulo;
+  document.getElementById('mat-partido').value = mat.partido || "";
+  document.getElementById('mat-cargo').value = mat.cargo || "";
+  document.getElementById('mat-duracao').value = mat.duracao;
+  document.getElementById('btn-salvar-mat').innerText = "Atualizar Material";
+  document.getElementById('status-mat').innerText = mat.temArquivo ? "Arquivo já anexado. Anexar outro o substituirá." : "Material sem arquivo.";
+  document.getElementById('status-mat').style.color = "gray";
+}
 
-    function tocarPlayer(fileId, ext, titulo) {
-      const aud = document.getElementById('audio-player');
-      const vid = document.getElementById('video-player');
-      aud.pause(); vid.pause(); aud.style.display = 'none'; vid.style.display = 'none';
-      document.getElementById('player-title').innerText = titulo;
+    // Player com Blob (Lê base64 e reconstrói o arquivo na memória do navegador)
+function tocarPlayer(fileId, ext, titulo) {
+  const aud = document.getElementById('audio-player');
+  const vid = document.getElementById('video-player');
+  const titleElem = document.getElementById('player-title');
+  
+  aud.pause(); vid.pause(); aud.style.display = 'none'; vid.style.display = 'none';
+  titleElem.innerText = "Carregando mídia (" + titulo + ")... Aguarde.";
 
-      const streamUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
-      const isVideo = ['mp4', 'mov', 'avi'].includes(ext.toLowerCase());
+  // Desabilita URLs temporárias antigas para limpar memória
+  if (aud.src.startsWith('blob:')) URL.revokeObjectURL(aud.src);
+  if (vid.src.startsWith('blob:')) URL.revokeObjectURL(vid.src);
+
+  google.script.run
+    .withSuccessHandler(res => {
+      // Converte o Base64 em um Array de Bytes
+      const byteCharacters = atob(res.base64);
+      const byteNumbers = new Uint8Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      // Reconstrói como Blob e cria o link nativo local
+      const blob = new Blob([byteNumbers], {type: res.mimeType});
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(ext.toLowerCase());
       const player = isVideo ? vid : aud;
       
-      player.src = streamUrl;
+      player.src = blobUrl;
       player.style.display = 'block';
+      titleElem.innerText = titulo;
       player.play().catch(err => console.warn("Clique no play manualmente.", err));
-    }
+    })
+    .withFailureHandler(err => {
+      titleElem.innerText = "Erro ao carregar arquivo de mídia.";
+      console.error(err);
+    })
+    .obterBytesMidiaGS(fileId);
+}
 
     // --- SEÇÃO 3: MAPAS ---
     function gerarGradeMapa() {
@@ -1091,10 +1145,11 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
   const tbody = document.querySelector("#tabela-legendas tbody");
   let duracaoEncontrada = "";
   let options = bancoMateriais.map(m => {
-      const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
-      if (isSelected) duracaoEncontrada = m.duracao; 
-      return `<option value="${m.titulo}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
-  }).join('');
+    const tituloCompleto = m.tituloCompleto || m.titulo; // Fallback caso seja arquivo antigo
+    const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
+    if (isSelected) duracaoEncontrada = m.duracao; 
+    return `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+}).join('');
   
   // AQUI ADICIONAMOS O verificarGrade60s() NO ONCHANGE
   let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
@@ -1115,7 +1170,12 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
 function adicionarMaterialLegenda() {
   const tbody = document.querySelector("#tabela-legendas tbody");
   const letraPeca = obterLetraPeca(contadorMateriais);
-  let options = bancoMateriais.map(m => `<option value="${m.titulo}" data-duracao="${m.duracao}">${m.titulo}</option>`).join('');
+  let options = bancoMateriais.map(m => {
+    const tituloCompleto = m.tituloCompleto || m.titulo; // Fallback caso seja arquivo antigo
+    const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
+    if (isSelected) duracaoEncontrada = m.duracao; 
+    return `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+}).join('');
   
   // verificarGrade60s() NO ONCHANGE
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
@@ -1245,7 +1305,9 @@ function salvarMapaNoDrive() {
   const selects = tabelaLegenda.querySelectorAll('select');
   selects.forEach(select => {
       const span = document.createElement('span');
-      span.innerText = select.selectedIndex >= 0 ? select.options[select.selectedIndex].text : "";
+      // Captura o data-titulocompleto para o PDF
+      const opt = select.options[select.selectedIndex];
+      span.innerText = opt ? (opt.getAttribute('data-titulocompleto') || opt.text) : "";
       select.parentNode.replaceChild(span, select);
   });
   const legendaHTML = `<div style="margin-bottom: 15px;"><h4 style="margin-top: 0;">Legenda de Materiais</h4>${tabelaLegenda.outerHTML}</div>`;
