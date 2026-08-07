@@ -885,8 +885,6 @@ function getAnoDaTabela() {
   if(!mat) return;
   document.getElementById('mat-id').value = mat.id;
   document.getElementById('mat-titulo').value = mat.titulo;
-  document.getElementById('mat-partido').value = mat.partido || "";
-  document.getElementById('mat-cargo').value = mat.cargo || "";
   document.getElementById('mat-duracao').value = mat.duracao;
   document.getElementById('btn-salvar-mat').innerText = "Atualizar Material";
   document.getElementById('status-mat').innerText = mat.temArquivo ? "Arquivo já anexado. Anexar outro o substituirá." : "Material sem arquivo.";
