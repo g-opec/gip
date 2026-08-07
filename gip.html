@@ -1181,9 +1181,7 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
 function adicionarMaterialLegenda() {
   const tbody = document.querySelector("#tabela-legendas tbody");
   const letraPeca = obterLetraPeca(contadorMateriais);
-  let options = bancoMateriais.map(m => {
-    `<option value="${m.titulo}" data-titulocompleto="${m.tituloCompleto}" data-duracao="${m.duracao}">${m.titulo}</option>`;
-}).join('');
+  let options = bancoMateriais.map(m => `<option value="${m.titulo}" data-duracao="${m.duracao}">${m.titulo}</option>`).join('');
   
   // verificarGrade60s() NO ONCHANGE
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
