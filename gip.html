@@ -37,11 +37,16 @@
 <body>
 
   <div class="main-section">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('tabela')">1. Programação</button>
-      <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
-      <button class="tab-btn" onclick="switchTab('mapa')">3. Gerar Mapa</button>
-      <button class="tab-btn" onclick="switchTab('envios')">4. Envios (E-mail)</button>
+    <div class="tabs" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; margin-bottom: 20px; padding-bottom: 5px;">
+      <div>
+        <button class="tab-btn active" onclick="switchTab('tabela')">1. Programação</button>
+        <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
+        <button class="tab-btn" onclick="switchTab('mapa')">3. Gerar Mapa</button>
+        <button class="tab-btn" onclick="switchTab('envios')">4. Envios (E-mail)</button>
+      </div>
+      <div style="padding-right: 15px;">
+        <img src="https://g-opec.github.io/master/fav/favicon-32x32.png" alt="G-OPEC" style="display: block; width: 32px; height: 32px;">
+      </div>
     </div>
 
     <div id="tab-tabela" class="tab-content active">
@@ -1122,7 +1127,7 @@ function tocarPlayer(fileId, ext, titulo) {
       mapaDias.forEach(dia => {
         if (mapaBlocos[blocoNome][dia] >= i) {
           
-          // NOVO: Puxa a letra que já estava na matriz oculta
+          // Puxa a letra que já estava na matriz oculta
           let letraInjetada = "";
           if (gridPreExistente[dia] && gridPreExistente[dia][blocoNome]) {
               if (!controleUsoGrid[dia]) controleUsoGrid[dia] = {};
@@ -1135,10 +1140,19 @@ function tocarPlayer(fileId, ext, titulo) {
               }
           }
 
+          let inputAttrs = `value="${letraInjetada}"`;
+          let inputStyle = `width: 30px; text-align: center; text-transform: uppercase; border: 1px solid #ccc; border-radius: 3px;`;
+          
+          // TRAVA: Se for um "-" puxado do banco, já nasce desabilitado e marcado
+          if (letraInjetada === "-") {
+              inputAttrs = `value="-" disabled data-bloqueado-banco="true"`;
+              inputStyle += ` background-color: #e9ecef;`;
+          }
+
           trHTML += `<td style="border: 1px solid #ddd; padding: 4px;">
                       <input type="text" class="input-letra-mapa" data-data="${dia}" data-bloco="${blocoNome}" 
-                      style="width: 30px; text-align: center; text-transform: uppercase; border: 1px solid #ccc; border-radius: 3px;"
-                      maxlength="2" value="${letraInjetada}" oninput="verificarGrade60s()">
+                      style="${inputStyle}"
+                      maxlength="2" ${inputAttrs} oninput="verificarGrade60s()">
                      </td>`;
 
         } else {
@@ -1181,13 +1195,19 @@ function verificarGrade60s() {
 
    let inputs = Array.from(document.querySelectorAll('.input-letra-mapa'));
    
-   // 1. Limpa os bloqueios
+   // 1. Limpa os bloqueios dinâmicos
    inputs.forEach(inp => {
        if(inp.getAttribute('data-bloqueado-60s') === "true") {
            inp.disabled = false;
            inp.style.backgroundColor = "";
            inp.value = inp.getAttribute('data-valor-antigo') || "";
            inp.removeAttribute('data-bloqueado-60s');
+       }
+       // Proteção Fixa: Se o campo veio do banco como "-", garante que continue bloqueado
+       if(inp.getAttribute('data-bloqueado-banco') === "true") {
+           inp.disabled = true;
+           inp.style.backgroundColor = "#e9ecef";
+           inp.value = "-";
        }
    });
 
@@ -1463,6 +1483,9 @@ function salvarMapaNoDrive() {
      </div>
      <div style="width: 100%;">
         ${gradeHTML}
+     </div>
+     <div style="text-align: right; font-size: 10px; color: #555; margin-top: 15px;">
+        Desenvolvido por: g-opec.github.io/system/
      </div>`;
 
      // Injeta CSS para quebrar a página (Exceto na última)
