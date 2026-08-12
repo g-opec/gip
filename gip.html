@@ -610,12 +610,11 @@ function organizarTextoPDF(textoBruto) {
   return matriz;
 }
 
-    function mapearDadosParaTabela(matriz) {
+   function mapearDadosParaTabela(matriz) {
   dadosTabela = [];
   for(let i=1; i<matriz.length; i++){
+    // A coluna 7 da matriz importada (8º item) é a nossa Letra
     const letraSalva = matriz[i][7] || ""; 
-    
-    // Se a letra salva for "-", significa que a linha foi cancelada por um 60s
     const isCancelado = (letraSalva === "-");
     
     dadosTabela.push([
@@ -626,8 +625,8 @@ function organizarTextoPDF(textoBruto) {
       matriz[i][4] || "", // 4: Cargo
       matriz[i][5] || "", // 5: Dur.
       matriz[i][6] || "", // 6: Título
-      isCancelado,        // 7: Cancelado (Booleano Interno reconstruído a partir do CSV)
-      isCancelado ? "" : letraSalva // 8: LETRA DA PEÇA
+      isCancelado,        // 7: Cancelado (Booleano Interno)
+      letraSalva          // 8: LETRA DA PEÇA (Aqui mantemos o "-", ou o vazio, ou a letra)
     ]);
   }
   renderTabelaPrincipal();
@@ -1020,7 +1019,6 @@ function tocarPlayer(fileId, ext, titulo) {
       const partidoStr = tr.cells[3].innerText;
       const cargoStr = tr.cells[4].innerText;
   
-      // Busca a Letra e o Título na Matriz Oculta
       const rowIndex = tr.getAttribute('data-index');
       let letraExistente = "";
       let tituloExistente = "";
@@ -1029,10 +1027,6 @@ function tocarPlayer(fileId, ext, titulo) {
         letraExistente = dadosTabela[rowIndex][8] || "";
       }
 
-      // Ignoramos as letras "-" na hora de montar a pré-existência visual do mapa
-      if (letraExistente === "-") letraExistente = "";
-
-      // Converte data DD/MM/YYYY para comparar
       const partesData = dataStr.split('/');
       if (partesData.length === 3) {
         const dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
@@ -1042,14 +1036,17 @@ function tocarPlayer(fileId, ext, titulo) {
           if (!cargoPartido) cargoPartido = cargoStr; 
           dadosPartido.push({ data: dataStr, bloco: bloco });
           
-          // Se houver material preenchido, guarda na memória para construir a grade
-          if (letraExistente) {
-             if (letraExistente !== "-") {
-                 legendasPreExistentes[letraExistente] = tituloExistente;
-             }
-             if (!gridPreExistente[dataStr]) gridPreExistente[dataStr] = {};
-             if (!gridPreExistente[dataStr][bloco]) gridPreExistente[dataStr][bloco] = [];
-             gridPreExistente[dataStr][bloco].push(letraExistente); // O "-" vai passar para a grade aqui
+          // ==========================================
+          // CORREÇÃO CRUCIAL AQUI: Empurra TUDO (Letra, "-", ou Vazio) para a grade
+          // Isso impede que as letras "escorreguem" para a esquerda!
+          if (!gridPreExistente[dataStr]) gridPreExistente[dataStr] = {};
+          if (!gridPreExistente[dataStr][bloco]) gridPreExistente[dataStr][bloco] = [];
+          gridPreExistente[dataStr][bloco].push(letraExistente); 
+          // ==========================================
+          
+          // E adiciona na legenda Apenas se for uma letra real de mídia (ignora o "-")
+          if (letraExistente && letraExistente !== "-") {
+               legendasPreExistentes[letraExistente] = tituloExistente;
           }
         }
       }
@@ -1057,7 +1054,6 @@ function tocarPlayer(fileId, ext, titulo) {
   });
 
   if (dadosPartido.length === 0) return alert("Nenhuma inserção encontrada para este filtro/período.");
-
   // Configurar Interface
   document.getElementById('mapa-partido-nome').innerText = nomePartido.toUpperCase();
   document.getElementById('mapa-partido-cargo').innerText = cargoPartido.toUpperCase();
