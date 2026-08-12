@@ -613,8 +613,11 @@ function organizarTextoPDF(textoBruto) {
     function mapearDadosParaTabela(matriz) {
   dadosTabela = [];
   for(let i=1; i<matriz.length; i++){
-    // Se a matriz veio do CSV salvo, ela já pode ter a Letra na coluna 7 (8º item real após o Título)
     const letraSalva = matriz[i][7] || ""; 
+    
+    // Se a letra salva for "-", significa que a linha foi cancelada por um 60s
+    const isCancelado = (letraSalva === "-");
+    
     dadosTabela.push([
       matriz[i][0] || "", // 0: Data
       matriz[i][1] || "", // 1: Bloco
@@ -623,8 +626,8 @@ function organizarTextoPDF(textoBruto) {
       matriz[i][4] || "", // 4: Cargo
       matriz[i][5] || "", // 5: Dur.
       matriz[i][6] || "", // 6: Título
-      false,              // 7: Cancelado (Booleano Interno)
-      letraSalva          // 8: LETRA DA PEÇA (Invisível)
+      isCancelado,        // 7: Cancelado (Booleano Interno reconstruído a partir do CSV)
+      isCancelado ? "" : letraSalva // 8: LETRA DA PEÇA
     ]);
   }
   renderTabelaPrincipal();
@@ -717,16 +720,22 @@ function getAnoDaTabela() {
     }
 
     function salvarProgramacao() {
-  const dadosValidos = dadosTabela.filter(linha => !linha[7]); // Ignora cancelados
-  if(dadosValidos.length === 0) return alert("Não há dados válidos para salvar.");
+  if(dadosTabela.length === 0) return alert("Não há dados para salvar.");
   
   document.getElementById('statusMessage').innerText = "Salvando CSV no Drive...";
   
-  // Adicionamos a 'Letra' no cabeçalho exportado
   const cabecalhos = ["Data", "Bloco", "Seq.", "Partido / Federação / Coligação", "Cargo", "Dur.", "Título do Material", "Letra"];
   
-  // Extrai apenas os itens visíveis (0 ao 6) e pula o booleano de cancelado para incluir a Letra (8)
-  const dadosParaCSV = dadosValidos.map(l => [l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[8] || ""]);
+  // Mantemos TODAS as linhas. 
+  // Se estiver cancelada (l[7]), forçamos o valor de Duração, Título e Letra para representar o vazio/cancelado.
+  const dadosParaCSV = dadosTabela.map(l => {
+      const isCancelado = l[7];
+      if (isCancelado) {
+          return [l[0], l[1], l[2], l[3], l[4], "", "", "-"]; 
+      } else {
+          return [l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[8] || ""];
+      }
+  });
   
   const dadosComCabecalho = [cabecalhos, ...dadosParaCSV];
   const csvString = dadosComCabecalho.map(linha => linha.join(";")).join("\n");
@@ -960,6 +969,9 @@ function tocarPlayer(fileId, ext, titulo) {
         tituloExistente = dadosTabela[rowIndex][6] || "";
         letraExistente = dadosTabela[rowIndex][8] || "";
       }
+
+      // Ignoramos as letras "-" na hora de montar a pré-existência visual do mapa
+      if (letraExistente === "-") letraExistente = "";
 
       // Converte data DD/MM/YYYY para comparar
       const partesData = dataStr.split('/');
