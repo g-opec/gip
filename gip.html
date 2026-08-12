@@ -1084,7 +1084,7 @@ function tocarPlayer(fileId, ext, titulo) {
 }
 
 
-// 1. GERADOR DA LETRA (A, B ... Z, AA, AB...)
+// GERADOR DA LETRA (A, B ... Z, AA, AB...)
 function obterLetraPeca(index) {
   let letra = '';
   let temp = index;
@@ -1143,26 +1143,27 @@ function verificarGrade60s() {
                inp.setAttribute('data-bloqueado-60s', "true");
                pularProximo = false;
            } else {
-               const letra = inp.value.toUpperCase();
-               if (mapaDuracao[letra] == 60) pularProximo = true;
+               // A CORREÇÃO ENTRA AQUI: .trim() limpa espaços vazios e parseInt força avaliação numeral
+               const letra = inp.value.trim().toUpperCase();
+               if (parseInt(mapaDuracao[letra]) === 60) pularProximo = true;
            }
        });
    });
 }
 
 
-// ADICIONAR LINHA NA LEGENDA COM DADOS (Usado na Autoconstrução com o gatilho verificarGrade60s)
+// ADICIONAR LINHA NA LEGENDA COM DADOS
 function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
   const tbody = document.querySelector("#tabela-legendas tbody");
   let duracaoEncontrada = "";
   let options = bancoMateriais.map(m => {
-    const tituloCompleto = m.tituloCompleto || m.titulo; // Fallback caso seja arquivo antigo
+    // Monta o nome final ex: "POLI26 - PARTIDO CARGO TITULO.mp3"
+    const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
     const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
     if (isSelected) duracaoEncontrada = m.duracao; 
-    return `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
-}).join('');
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+  }).join('');
   
-  // AQUI ADICIONAMOS O verificarGrade60s() NO ONCHANGE
   let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
                       <option value="" data-duracao="">Selecione...</option>
                       ${options}
@@ -1177,18 +1178,16 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
   contadorMateriais++;
 }
 
-// 2. ADICIONAR LINHA NA LEGENDA
+// ADICIONAR LINHA NA LEGENDA (EM BRANCO)
 function adicionarMaterialLegenda() {
   const tbody = document.querySelector("#tabela-legendas tbody");
   const letraPeca = obterLetraPeca(contadorMateriais);
   
-  // Limpamos a checagem de "tituloEspecifico" e "duracaoEncontrada" aqui
   let options = bancoMateriais.map(m => {
-    const tituloCompleto = m.tituloCompleto || m.titulo; // Fallback caso seja arquivo antigo
-    return `<option value="${m.titulo}" data-titulocompleto="${tituloCompleto}" data-duracao="${m.duracao}">${m.titulo}</option>`;
+    const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}">${m.titulo}</option>`;
   }).join('');
   
-  // verificarGrade60s() NO ONCHANGE
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
                       <option value="" data-duracao="">Selecione...</option>
                       ${options}
@@ -1203,7 +1202,7 @@ function adicionarMaterialLegenda() {
   contadorMateriais++;
 }
 
-// 4. FINALIZAR MAPA
+// FINALIZAR MAPA
 function finalizarMapa() {
   const selects = document.querySelectorAll('.select-material');
   const mapaLegenda = {};
@@ -1311,22 +1310,31 @@ function salvarMapaNoDrive() {
   btn.innerText = "Salvando no Servidor...";
   btn.disabled = true;
 
-  // 1. Prepara a Legenda Limpa (Extrai o texto dos Selects)
-  const tabelaLegenda = document.getElementById('tabela-legendas').cloneNode(true);
-  const selects = tabelaLegenda.querySelectorAll('select');
-  selects.forEach(select => {
+  // 1. Prepara a Legenda Limpa 
+  // Buscamos a opção selecionada na tabela ORIGINAL, pois o cloneNode perde a seleção
+  const tabelaLegendaOriginal = document.getElementById('tabela-legendas');
+  const tabelaLegendaClone = tabelaLegendaOriginal.cloneNode(true);
+  
+  const selectsOriginais = tabelaLegendaOriginal.querySelectorAll('select');
+  const selectsClone = tabelaLegendaClone.querySelectorAll('select');
+  
+  selectsOriginais.forEach((selectOrig, index) => {
+      const selectClone = selectsClone[index];
       const span = document.createElement('span');
-      // Captura o data-titulocompleto para o PDF
-      const opt = select.options[select.selectedIndex];
+      
+      const opt = selectOrig.options[selectOrig.selectedIndex];
+      // Captura o NOME COMPLETO COM A EXTENSÃO que montamos na legenda
       span.innerText = opt ? (opt.getAttribute('data-titulocompleto') || opt.text) : "";
-      select.parentNode.replaceChild(span, select);
+      
+      selectClone.parentNode.replaceChild(span, selectClone);
   });
-  const legendaHTML = `<div style="margin-bottom: 15px;"><h4 style="margin-top: 0;">Legenda de Materiais</h4>${tabelaLegenda.outerHTML}</div>`;
+  
+  const legendaHTML = `<div style="margin-bottom: 15px;"><h4 style="margin-top: 0;">Legenda de Materiais</h4>${tabelaLegendaClone.outerHTML}</div>`;
 
   // 2. Fatiamento (Chunking) da Tabela do Mapa para o PDF
   const theadCells = Array.from(document.querySelectorAll('#tabela-grade-mapa thead th'));
   const tbodyRows = Array.from(document.querySelectorAll('#tabela-grade-mapa tbody tr'));
-  
+
   const totalDias = theadCells.length - 1; // Coluna 0 é sempre o "Bloco"
   const DIAS_POR_PAGINA = 7; // Limite perfeito para caber no A4 Landscape sem esmagar
   const totalPaginas = Math.ceil(totalDias / DIAS_POR_PAGINA) || 1;
