@@ -931,7 +931,7 @@ function excluirMaterial(id, titulo) {
   document.getElementById('status-mat').style.color = "gray";
 }
 
-// Função que sincroniza as peças mostradas apenas com o Partido/Cargo ativo
+// Função que sincroniza as peças mostradas apenas com o Partido/Cargo ativo (Com proteção contra dados antigos)
 function obterMateriaisDoFiltro() {
     const filtroAtivo = document.getElementById('filtroPartido').value.toUpperCase().trim();
     if (!filtroAtivo.includes('-')) return bancoMateriais; // Se não tiver filtro completo, mostra tudo
@@ -940,7 +940,13 @@ function obterMateriaisDoFiltro() {
     const partidoFiltro = partes[0].trim();
     const cargoFiltro = partes[1].trim();
     
-    return bancoMateriais.filter(m => m.partido.toUpperCase() === partidoFiltro && m.cargo.toUpperCase() === cargoFiltro);
+    return bancoMateriais.filter(m => {
+        // Fallback: Se o m.partido ou m.cargo for undefined, assume "" para evitar o erro do toUpperCase
+        const partidoMaterial = m.partido ? m.partido.toUpperCase() : "";
+        const cargoMaterial = m.cargo ? m.cargo.toUpperCase() : "";
+        
+        return partidoMaterial === partidoFiltro && cargoMaterial === cargoFiltro;
+    });
 }
 
     // Player com Blob (Lê base64 e reconstrói o arquivo na memória do navegador)
