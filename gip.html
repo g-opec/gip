@@ -1203,7 +1203,7 @@ function adicionarMaterialLegenda() {
   
   let options = bancoMateriais.map(m => {
     const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
-    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${nomeArquivoReal}</option>`;
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}">${nomeArquivoReal}</option>`;
   }).join('');
   
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
