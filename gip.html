@@ -141,9 +141,8 @@
       <p style="margin: 5px 0;">Período: <span id="mapa-periodo-texto"></span></p>
     </div>
 
-    <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
-      
-      <div style="flex: 1; min-width: 300px;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="width: 100%;">
         <h4 style="margin-top: 0;">Legenda de Materiais</h4>
         <button class="btn btn-secondary" onclick="adicionarMaterialLegenda()" style="margin-bottom: 10px; font-size: 12px;">+ Adicionar Peça</button>
         <table id="tabela-legendas" style="width: 100%; border-collapse: collapse;">
@@ -1102,7 +1101,7 @@ function atualizarDuracaoLegenda(selectElem) {
   tdDuracao.innerText = duracao ? duracao + 's' : '-';
 }
 
-// Verifica a grade ao vivo e bloqueia a próxima célula se for 60s
+// Verifica a grade ao vivo e bloqueia a próxima célula cronológica se for 60s
 function verificarGrade60s() {
    const mapaDuracao = {};
    document.querySelectorAll('.select-material').forEach(sel => {
@@ -1111,9 +1110,9 @@ function verificarGrade60s() {
       if(opt) mapaDuracao[letra] = opt.getAttribute('data-duracao');
    });
 
-   const inputs = Array.from(document.querySelectorAll('.input-letra-mapa'));
+   let inputs = Array.from(document.querySelectorAll('.input-letra-mapa'));
    
-   // 1. Limpa os bloqueios (caso o usuário tenha apagado o 60s)
+   // 1. Limpa os bloqueios
    inputs.forEach(inp => {
        if(inp.getAttribute('data-bloqueado-60s') === "true") {
            inp.disabled = false;
@@ -1123,31 +1122,50 @@ function verificarGrade60s() {
        }
    });
 
-   // 2. Agrupa por dia e bloco (Coluna vertical do Mapa)
-   const grupos = {};
-   inputs.forEach(inp => {
-       const chave = inp.getAttribute('data-data') + '-' + inp.getAttribute('data-bloco');
-       if(!grupos[chave]) grupos[chave] = [];
-       grupos[chave].push(inp);
+   // 2. Ordena todos os inputs cronologicamente (Data -> Bloco numérico -> Posição na Linha)
+   const parseDataBR = (d) => {
+       const p = d.split('/');
+       return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]).getTime() : 0;
+   };
+
+   inputs.sort((a, b) => {
+       const dataA = parseDataBR(a.getAttribute('data-data'));
+       const dataB = parseDataBR(b.getAttribute('data-data'));
+       if (dataA !== dataB) return dataA - dataB;
+       
+       const blcA = a.getAttribute('data-bloco');
+       const blcB = b.getAttribute('data-bloco');
+       const numA = parseInt(blcA.replace(/\D/g, ''));
+       const numB = parseInt(blcB.replace(/\D/g, ''));
+       if (!isNaN(numA) && !isNaN(numB) && numA !== numB) return numA - numB;
+       if (blcA !== blcB) return blcA.localeCompare(blcB);
+       
+       return a.closest('tr').rowIndex - b.closest('tr').rowIndex;
    });
 
-   // 3. Aplica a trava visual (-) na próxima inserção
-   Object.values(grupos).forEach(lista => {
-       let pularProximo = false;
-       lista.forEach(inp => {
-           if (pularProximo) {
-               if (inp.value !== "-") inp.setAttribute('data-valor-antigo', inp.value);
-               inp.disabled = true;
-               inp.style.backgroundColor = "#e9ecef";
-               inp.value = "-";
-               inp.setAttribute('data-bloqueado-60s', "true");
-               pularProximo = false;
-           } else {
-               // A CORREÇÃO ENTRA AQUI: .trim() limpa espaços vazios e parseInt força avaliação numeral
-               const letra = inp.value.trim().toUpperCase();
-               if (parseInt(mapaDuracao[letra]) === 60) pularProximo = true;
+   // 3. Aplica a trava visual na próxima inserção (Independente de bloco ou dia)
+   let pularProximo = false;
+   
+   inputs.forEach((inp, i) => {
+       if (pularProximo) {
+           if (inp.value !== "-") inp.setAttribute('data-valor-antigo', inp.value);
+           inp.disabled = true;
+           inp.style.backgroundColor = "#e9ecef";
+           inp.value = "-";
+           inp.setAttribute('data-bloqueado-60s', "true");
+           pularProximo = false;
+       } else {
+           const letra = inp.value.trim().toUpperCase();
+           if (parseInt(mapaDuracao[letra]) === 60) {
+               pularProximo = true;
+               // Se for a última posição gerada no mapa, avisa o usuário!
+               if (i === inputs.length - 1) {
+                   setTimeout(() => {
+                       alert(`Atenção: A peça de 60s '${letra}' está no fim do período gerado (${inp.getAttribute('data-data')} - ${inp.getAttribute('data-bloco')}). A próxima inserção bloqueada cairia num dia futuro. Aumente o "Fim" do mapa para acomodar o espaço.`);
+                   }, 150);
+               }
            }
-       });
+       }
    });
 }
 
@@ -1161,7 +1179,7 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
     const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
     const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
     if (isSelected) duracaoEncontrada = m.duracao; 
-    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${m.titulo}</option>`;
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${nomeArquivoReal}</option>`;
   }).join('');
   
   let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
@@ -1185,7 +1203,7 @@ function adicionarMaterialLegenda() {
   
   let options = bancoMateriais.map(m => {
     const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
-    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}">${m.titulo}</option>`;
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${nomeArquivoReal}</option>`;
   }).join('');
   
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
@@ -1248,34 +1266,25 @@ function finalizarMapa() {
 
   dadosTabela.forEach(l => l[7] = false); // Limpa cancelamentos gerais
   const linhasTabela = document.querySelectorAll('#tabelaPolitica tbody tr');
-  let blocoEmCancelamento = null;
+  let pularProximaLinha = false; // Substitui o antigo "blocoEmCancelamento"
 
   linhasTabela.forEach(tr => {
     const rowIndex = tr.getAttribute('data-index');
-    if (rowIndex === null || !dadosTabela[rowIndex]) return;
-
-    // A MÁGICA ACONTECE AQUI: O 60s só afeta as linhas ativas no seu filtro (seu partido!)
-    if (tr.style.display === "none") return;
+    if (rowIndex === null || !dadosTabela[rowIndex] || tr.style.display === "none") return;
 
     const dataStr = tr.cells[0].innerText;
     const bloco = tr.cells[1].innerText;
-    const chaveAtual = `${dataStr}-${bloco}`;
 
-    // Segurança: se o bloco mudou, reseta o cancelamento (evita vazar para outro dia/bloco)
-    if (blocoEmCancelamento && blocoEmCancelamento !== chaveAtual) {
-        blocoEmCancelamento = null;
-    }
-
-    if (blocoEmCancelamento === chaveAtual) {
+    // Cancela a linha obedecendo a cronologia do 60s transversal
+    if (pularProximaLinha) {
         dadosTabela[rowIndex][7] = true; 
         dadosTabela[rowIndex][5] = ""; 
         dadosTabela[rowIndex][6] = ""; 
         dadosTabela[rowIndex][8] = ""; 
-        blocoEmCancelamento = null; 
+        pularProximaLinha = false; 
         return; 
     }
 
-    // Aplica os dados do mapa na tabela principal
     if (insercoesDigitadas[dataStr] && insercoesDigitadas[dataStr][bloco] && insercoesDigitadas[dataStr][bloco].length > 0) {
         const itemAtribuido = insercoesDigitadas[dataStr][bloco].shift();
         
@@ -1284,10 +1293,9 @@ function finalizarMapa() {
         dadosTabela[rowIndex][8] = itemAtribuido.letra; 
         
         if (itemAtribuido.duracao == 60 || itemAtribuido.duracao == '60') {
-            blocoEmCancelamento = chaveAtual;
+            pularProximaLinha = true; // Aciona para a próxima linha visível, seja onde for!
         }
     } else {
-        // Se ficou vazio, reseta pra 30s limpo
         dadosTabela[rowIndex][5] = 30;
         dadosTabela[rowIndex][6] = "";
         dadosTabela[rowIndex][8] = "";
@@ -1296,7 +1304,6 @@ function finalizarMapa() {
 
   renderTabelaPrincipal();
   salvarMapaNoDrive();
-
 }
 
 // 5. ENVIAR PARA O SERVIDOR
@@ -1382,12 +1389,12 @@ function salvarMapaNoDrive() {
 
      // Layout Side-by-Side (Tabelas seguram melhor a formatação em PDFs gerados por Script do que Flexbox)
      let layoutFinal = `
-     <table style="width: 100%; border: none;">
-        <tr>
-           <td style="width: 35%; vertical-align: top; padding-right: 15px;">${legendaHTML}</td>
-           <td style="width: 65%; vertical-align: top;">${gradeHTML}</td>
-        </tr>
-     </table>`;
+     <div style="width: 100%; margin-bottom: 20px;">
+        ${legendaHTML}
+     </div>
+     <div style="width: 100%;">
+        ${gradeHTML}
+     </div>`;
 
      // Injeta CSS para quebrar a página (Exceto na última)
      let quebraPagina = (p < totalPaginas - 1) ? 'page-break-after: always;' : '';
