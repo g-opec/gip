@@ -132,13 +132,13 @@ function salvarMaterialGS(ano, objMaterial) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    let materiais = getJsonMateriais(pastaArquivos);
+    
+    let materiais = getJsonMateriais(pastaAno); 
     
     let novoArquivoId = null;
     let novaExtensao = "";
     
     if (objMaterial.arquivoBase64) {
-      // Usa o fileName já padronizado que veio do front-end (POLI + ANO + PARTIDO + CARGO + TITULO)
       const blob = Utilities.newBlob(Utilities.base64Decode(objMaterial.arquivoBase64), objMaterial.mimeType, objMaterial.fileName);
       const file = pastaArquivos.createFile(blob);
       
@@ -150,8 +150,8 @@ function salvarMaterialGS(ano, objMaterial) {
     const index = materiais.findIndex(m => m.id === objMaterial.id);
     let matData = {
       id: objMaterial.id || new Date().getTime().toString(),
-      titulo: objMaterial.titulo, // Título Simples (para a Tabela)
-      tituloCompleto: objMaterial.tituloCompleto, // Título Completo (para o PDF do Mapa)
+      titulo: objMaterial.titulo, 
+      tituloCompleto: objMaterial.tituloCompleto, 
       partido: objMaterial.partido,
       cargo: objMaterial.cargo,
       duracao: objMaterial.duracao,
@@ -170,7 +170,8 @@ function salvarMaterialGS(ano, objMaterial) {
       materiais.push(matData);
     }
     
-    salvarJsonMateriais(pastaArquivos, materiais);
+    // ATUALIZAÇÃO: Salva o JSON na pasta do Ano
+    salvarJsonMateriais(pastaAno, materiais); 
     return { status: 'sucesso', materiais: materiais };
   } catch (e) {
     throw new Error("Erro ao salvar material: " + e.message);
@@ -180,8 +181,7 @@ function salvarMaterialGS(ano, objMaterial) {
 function listarMateriaisGS(ano) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
-    const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    return getJsonMateriais(pastaArquivos);
+    return getJsonMateriais(pastaAno);
   } catch(e) {
     return [];
   }
@@ -205,8 +205,7 @@ function obterBytesMidiaGS(fileId) {
 function excluirMaterialGS(ano, id) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
-    const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    let materiais = getJsonMateriais(pastaArquivos);
+    let materiais = getJsonMateriais(pastaAno);
     
     const index = materiais.findIndex(m => m.id === id);
     if (index >= 0) {
@@ -217,7 +216,8 @@ function excluirMaterialGS(ano, id) {
       }
       // Remove do Banco de Dados JSON
       materiais.splice(index, 1);
-      salvarJsonMateriais(pastaArquivos, materiais);
+      
+      salvarJsonMateriais(pastaAno, materiais); 
     }
     return { status: 'sucesso', materiais: materiais };
   } catch (e) {
@@ -302,13 +302,12 @@ function salvarMapaGS(ano, nomePartido, htmlConteudo, numeroMapaOrig) {
 function salvarContatosGS(ano, contatosString) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
-    const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    const files = pastaArquivos.getFilesByName("contatos.json");
+    const files = pastaAno.getFilesByName("contatos.json");
     
     if (files.hasNext()) {
       files.next().setContent(contatosString);
     } else {
-      pastaArquivos.createFile("contatos.json", contatosString, MimeType.PLAIN_TEXT);
+      pastaAno.createFile("contatos.json", contatosString, MimeType.PLAIN_TEXT);
     }
     return true;
   } catch(e) {
@@ -319,8 +318,7 @@ function salvarContatosGS(ano, contatosString) {
 function carregarContatosGS(ano) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
-    const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    const files = pastaArquivos.getFilesByName("contatos.json");
+    const files = pastaAno.getFilesByName("contatos.json");
     
     if (files.hasNext()) {
       return files.next().getBlob().getDataAsString();
