@@ -1,4 +1,4 @@
-# GIP - Gerenciador de Inserções Partidárias (G-opec) 🗳️📺
+# GIP - Gerenciador de Inserções Partidárias (G-opec) 🗳️📻📺
 
 Bem-vindo ao repositório do **GIP (Gerenciador de Inserções Partidárias)**. Este projeto é uma aplicação web completa desenvolvida para automatizar e facilitar a gestão de campanhas políticas, especificamente no controle de inserções de rádio e TV, mapas de mídia e envio de materiais para emissoras.
 
