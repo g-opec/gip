@@ -51,17 +51,20 @@ Como o script foi criado por você na sua própria conta e não é um aplicativo
 Fique tranquilo! O código é totalmente transparente, roda apenas na sua conta e ninguém mais terá acesso aos seus dados. 
 
 Siga o passo a passo abaixo para autorizar a aplicação:
+**Passo 1:** esteja conectado a uma conta Google, caso contrario você receberá o erro 401 do servidor, basta fazer login no proprio site de busca do google(https://www.google.com/).
 
-**Passo 1:** Ao tentar implantar o projeto ou rodar o código pela primeira vez, um aviso de **"Autorização obrigatória"** vai aparecer. Clique em **Revisar permissões**.
+*(print do login Google)*
+> ![Print: Entrar na Conta](./prints/0.png)
+
+**Evite erros** caso ao fazer login voce possua mais de uma conta, faça logout em todas e refaça o login apenasna conta que represente sua seção, caso contrario o servidor decidirá automaticamente qual conta será a principal.  
+
+ *(print da seleção de conta)*
+> ![Print: Selecionar Conta](./prints/00.png)
+
+**Passo 2:** Ao implantar o projeto ou rodar o código pela primeira vez, um aviso de **"Autorização obrigatória"** vai aparecer. Clique em **Revisar permissões**.
 
 > *(print da tela de "Autorização Obrigatória")*
 > ![Print: Autorização Obrigatória](./prints/1.png)
-
-**Passo 2:** Uma janela do Google se abrirá. **Selecione a sua conta do Google** (a mesma onde você irá utilizar ou criou o projeto).
-
-> *(print da seleção de conta)*
-> ![Print: Entrar na Conta](./prints/0.png)
-> ![Print: Selecionar Conta](./prints/00.png)
 
 **Passo 3:** A tela de alerta **"O Google não verificou este app"** será exibida. Não clique em "Voltar à segurança". Em vez disso, clique no link **Avançado** (ou *Advanced*), no canto inferior esquerdo.
 
