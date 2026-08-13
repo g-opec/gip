@@ -706,6 +706,22 @@ function filtrarTabelaPolitica() {
     atualizarTotalVisivel();
     if (typeof renderListaMateriais === 'function') renderListaMateriais();
     if (typeof renderizarChecksEnvio === 'function') renderizarChecksEnvio();
+    limparTelasDependentes();
+}
+
+// Limpa os dados do partido anterior das abas 3 e 4 quando o filtro muda
+function limparTelasDependentes() {
+    // 1. Esconde a interface do mapa gerado (força o usuário a gerar um novo)
+    const mapaContainer = document.getElementById('container-mapa-gerado');
+    if (mapaContainer) {
+        mapaContainer.style.display = "none";
+    }
+
+    // 2. Limpa os textos de composição de e-mail 
+    const assunto = document.getElementById('email-assunto');
+    const corpo = document.getElementById('email-corpo');
+    if (assunto) assunto.value = "";
+    if (corpo) corpo.value = "";
 }
 
  function atualizarTotalVisivel() {
