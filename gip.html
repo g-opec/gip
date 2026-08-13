@@ -1371,26 +1371,28 @@ function finalizarMapa() {
     const dataStr = tr.cells[0].innerText; // Formato DD/MM/YYYY
     const bloco = tr.cells[1].innerText;
 
-    // Converter dataStr para YYYY-MM-DD para comparar com o Período do Mapa
     const partesData = dataStr.split('/');
     if (partesData.length !== 3) return;
     const dataIso = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
 
-    // TRAVA CRUCIAL: Só mexe no registro se a data do registro estiver DENTRO do período do mapa ativo
+    // 1. AVALIA O TRANSBORDAMENTO (SPILLOVER) DO 60S PRIMEIRO!
+    // Se a linha anterior for de 60s, esta linha é cancelada ("-") 
+    // mesmo que ela pertença a um dia fora do período do mapa.
+    if (pularProximaLinha) {
+        dadosTabela[rowIndex][7] = true; 
+        dadosTabela[rowIndex][5] = ""; 
+        dadosTabela[rowIndex][6] = ""; 
+        dadosTabela[rowIndex][8] = "-"; 
+        pularProximaLinha = false; 
+        return; // Interrompe o processamento DESTA linha, pois ela já foi engolida.
+    }
+
+    // 2. TRAVA CRUCIAL DE PERÍODO
+    // Só insere ou limpa materiais normais se a linha estiver DENTRO do período do mapa.
     if (dataIso >= dtInicio && dataIso <= dtFim) {
       
-      // Limpa o status de cancelado apenas do período atual
+      // Limpa o status de cancelado para receber nova inserção
       dadosTabela[rowIndex][7] = false; 
-
-      // Cancela a linha obedecendo a cronologia do 60s transversal
-      if (pularProximaLinha) {
-          dadosTabela[rowIndex][7] = true; 
-          dadosTabela[rowIndex][5] = ""; 
-          dadosTabela[rowIndex][6] = ""; 
-          dadosTabela[rowIndex][8] = "-"; 
-          pularProximaLinha = false; 
-          return; 
-      }
 
       if (insercoesDigitadas[dataStr] && insercoesDigitadas[dataStr][bloco] && insercoesDigitadas[dataStr][bloco].length > 0) {
           const itemAtribuido = insercoesDigitadas[dataStr][bloco].shift();
@@ -1399,8 +1401,9 @@ function finalizarMapa() {
           dadosTabela[rowIndex][6] = itemAtribuido.titulo;
           dadosTabela[rowIndex][8] = itemAtribuido.letra; 
           
+          // Se for 60s, liga o gatilho para a próxima linha visível
           if (itemAtribuido.duracao == 60 || itemAtribuido.duracao == '60') {
-              pularProximaLinha = true; // Aciona para a próxima linha visível
+              pularProximaLinha = true; 
           }
       } else {
           dadosTabela[rowIndex][5] = 30;
@@ -1408,7 +1411,6 @@ function finalizarMapa() {
           dadosTabela[rowIndex][8] = "";
       }
     }
-    // Se a data estiver FORA do período (ex: dia 09), o bloco é ignorado e mantido intacto!
   });
 
   renderTabelaPrincipal();
