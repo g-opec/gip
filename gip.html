@@ -764,12 +764,25 @@ function getAnoDaTabela() {
   const dadosComCabecalho = [cabecalhos, ...dadosParaCSV];
   const csvString = dadosComCabecalho.map(linha => linha.join(";")).join("\n");
   
+  // TRAVA DE SEGURANÇA DO ANO AQUI
+  let anoAtivo = document.getElementById('select-ano').value;
+  if (!anoAtivo) {
+      anoAtivo = getAnoDaTabela(); // Puxa o ano seguro da tabela como plano B
+      
+      // Se o select ainda estiver vazio, preenche automaticamente para manter a interface sincronizada
+      const select = document.getElementById('select-ano');
+      if (select && select.options.length > 0 && select.options[0].value === "") {
+          select.innerHTML = `<option value="${anoAtivo}">${anoAtivo}</option>`;
+          select.disabled = false;
+      }
+  }
+  
   google.script.run
     .withSuccessHandler(url => {
        document.getElementById('statusMessage').innerText = "Salvo com sucesso!";
        alert("CSV Salvo e atualizado no sistema!");
     })
-    .salvarCSVProgramacao(csvString, document.getElementById('select-ano').value);
+    .salvarCSVProgramacao(csvString, anoAtivo); // ✅ Use a variável 'anoAtivo' segura
 }
 
     // --- SEÇÃO 2: MATERIAIS ---
@@ -1429,7 +1442,6 @@ function finalizarMapa() {
     }
   });
 
-  renderTabelaPrincipal();
   salvarMapaNoDrive();
 }
 
@@ -1533,6 +1545,9 @@ function salvarMapaNoDrive() {
 
   google.script.run
     .withSuccessHandler(() => {
+      // Atualiza a interface gráfica apenas DEPOIS que o PDF for salvo
+      renderTabelaPrincipal(); 
+      
       alert("Mapa salvo com sucesso! A Tabela Principal foi atualizada com os títulos.");
       btn.innerText = "✅ Mapa Salvo e Finalizado";
       if (typeof salvarProgramacao === 'function') salvarProgramacao(); 
