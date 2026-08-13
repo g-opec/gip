@@ -51,34 +51,40 @@ Como o script foi criado por você na sua própria conta e não é um aplicativo
 Fique tranquilo! O código é totalmente transparente, roda apenas na sua conta e ninguém mais terá acesso aos seus dados. 
 
 Siga o passo a passo abaixo para autorizar a aplicação:
+
+
 **Passo 1:** esteja conectado a uma conta Google, caso contrario você receberá o erro 401 do servidor, basta fazer login no proprio site de busca do google(https://www.google.com/).
 
 *(print do login Google)*
 > ![Print: Entrar na Conta](./prints/0.png)
 
-**Evite erros** caso ao fazer login voce possua mais de uma conta, faça logout em todas e refaça o login apenasna conta que represente sua seção, caso contrario o servidor decidirá automaticamente qual conta será a principal.  
+**Evite erros** caso ao fazer login você possua mais de uma conta, faça logout em todas e refaça o login apenas na conta que represente sua seção, caso contrario o servidor decidirá automaticamente qual conta será a principal.  
 
  *(print da seleção de conta)*
 > ![Print: Selecionar Conta](./prints/00.png)
+
 
 **Passo 2:** Ao implantar o projeto ou rodar o código pela primeira vez, um aviso de **"Autorização obrigatória"** vai aparecer. Clique em **Revisar permissões**.
 
 > *(print da tela de "Autorização Obrigatória")*
 > ![Print: Autorização Obrigatória](./prints/1.png)
 
+
 **Passo 3:** A tela de alerta **"O Google não verificou este app"** será exibida. Não clique em "Voltar à segurança". Em vez disso, clique no link **Avançado** (ou *Advanced*), no canto inferior esquerdo.
 
-> *(print da tela de app não verificado com uma seta no "Avançado")*
+> *(print da tela de app não verificado "Avançado")*
 > ![Print: Tela de Aviso do Google](./prints/2.png)
+
 
 **Passo 4:** Logo abaixo, aparecerá um novo link dizendo **"Acessar [Nome do projeto] (não seguro)"**. Clique neste link.
 
 > *(print mostrando o link "Acessar projeto não seguro")*
 > ![Print: Acessar projeto](./prints/3.png)
 
+
 **Passo 5:** O Google listará quais permissões o sistema precisa (Ler arquivos do Drive, enviar e-mails, etc.). Role a página até o final e clique em **Permitir**.
 
-> *(print da tela final de permissões clicando em Permitir)*
+> *(print da tela final de permissões)*
 > ![Print: Permitir acessos](./prints/4.png)
 > ![Print: Continuar](./prints/5.png)
 
@@ -95,7 +101,7 @@ Este projeto é "Serverless" e roda inteiramente no ecossistema gratuito do Goog
 3. No Apps Script, clique em **Implantar > Nova implantação**.
 4. Escolha o tipo **App da Web**.
 5. Configure as permissões:
-   * **Executar como:** `Eu` (Isso garante que os arquivos serão salvos no *seu* Drive).
+   * **Executar como:** `Eu`
    * **Quem tem acesso:** `Qualquer pessoa com uma Conta do Google` (Ou apenas você, dependendo do seu uso).
 6. Autorize os acessos ao seu Drive e Gmail (é 100% seguro, o código roda apenas na sua conta).
 7. Acesse a URL gerada e pronto! O sistema criará as pastas estruturadas (ex: `Politica/2024/mapas`) automaticamente no seu Google Drive no primeiro uso.
