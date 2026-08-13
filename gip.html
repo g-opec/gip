@@ -705,6 +705,7 @@ function filtrarTabelaPolitica() {
     // Atualiza o total sempre que o usuário digitar no filtro
     atualizarTotalVisivel();
     if (typeof renderListaMateriais === 'function') renderListaMateriais();
+    if (typeof renderizarChecksEnvio === 'function') renderizarChecksEnvio();
 }
 
  function atualizarTotalVisivel() {
@@ -1355,13 +1356,15 @@ function finalizarMapa() {
     insercoesDigitadas[data][bloco].push({ titulo: legendaItem.titulo, letra: letra, duracao: legendaItem.duracao });
   });
 
-  dadosTabela.forEach(l => l[7] = false); // Limpa cancelamentos gerais
   const linhasTabela = document.querySelectorAll('#tabelaPolitica tbody tr');
   let pularProximaLinha = false; // Substitui o antigo "blocoEmCancelamento"
 
   linhasTabela.forEach(tr => {
     const rowIndex = tr.getAttribute('data-index');
     if (rowIndex === null || !dadosTabela[rowIndex] || tr.style.display === "none") return;
+
+    // Limpa o cancelamento APENAS dos dados que estão visíveis neste mapa (Protege o histórico dos outros)
+    dadosTabela[rowIndex][7] = false; 
 
     const dataStr = tr.cells[0].innerText;
     const bloco = tr.cells[1].innerText;
@@ -1563,80 +1566,119 @@ function salvarMapaNoDrive() {
         .salvarContatosGS(anoSelecionado, texto);
     }
 
-    function renderizarChecksEnvio() {
-      // Renderiza Mapas
-      const divMapas = document.getElementById('check-list-mapas');
-      divMapas.innerHTML = "";
-      if (listaMapasDrive.length === 0) {
-         divMapas.innerHTML = "<span style='color:gray'>Nenhum mapa salvo neste ano.</span>";
-      } else {
-         listaMapasDrive.forEach(mapa => {
+    // Filtra os mapas do Google Drive baseando-se no que está ativo na Tabela Principal
+function obterMapasDoFiltro() {
+    const filtroAtivo = document.getElementById('filtroPartido').value.toUpperCase().trim();
+    if (!filtroAtivo.includes('-')) return listaMapasDrive;
+
+    const partes = filtroAtivo.split('-');
+    const partidoFiltro = partes[0].trim();
+    const cargoFiltro = partes[1].trim();
+
+    return listaMapasDrive.filter(mapa => {
+        const nomeUP = mapa.nome.toUpperCase();
+        return nomeUP.includes(partidoFiltro) && nomeUP.includes(cargoFiltro);
+    });
+}
+
+function renderizarChecksEnvio() {
+    // 1. Renderiza Mapas Filtrados
+    const divMapas = document.getElementById('check-list-mapas');
+    divMapas.innerHTML = "";
+    const mapasFiltrados = obterMapasDoFiltro();
+
+    if (mapasFiltrados.length === 0) {
+        divMapas.innerHTML = "<span style='color:gray'>Nenhum mapa encontrado para o filtro atual.</span>";
+    } else {
+        mapasFiltrados.forEach(mapa => {
             divMapas.innerHTML += `
               <label style="cursor:pointer; display:block;">
                 <input type="checkbox" class="chk-envio chk-mapa" value="${mapa.id}" data-nome="${mapa.nome}" onchange="atualizarTemplateEmail()"> 
                 📄 ${mapa.nome} <span style="color:gray; font-size:11px;">(${mapa.data})</span>
               </label>`;
-         });
-      }
+        });
+    }
 
-      // Renderiza Materiais
-      const divMats = document.getElementById('check-list-materiais');
-      divMats.innerHTML = "";
-      const matsComArquivo = bancoMateriais.filter(m => m.temArquivo);
-      if (matsComArquivo.length === 0) {
-         divMats.innerHTML = "<span style='color:gray'>Nenhuma mídia cadastrada com arquivo.</span>";
-      } else {
-         matsComArquivo.forEach(mat => {
+    // 2. Renderiza Materiais Filtrados
+    const divMats = document.getElementById('check-list-materiais');
+    divMats.innerHTML = "";
+    
+    // Aproveita a sua lógica pronta de filtro de materiais
+    const matsFiltrados = obterMateriaisDoFiltro().filter(m => m.temArquivo);
+    
+    if (matsFiltrados.length === 0) {
+        divMats.innerHTML = "<span style='color:gray'>Nenhuma mídia cadastrada no filtro atual.</span>";
+    } else {
+        matsFiltrados.forEach(mat => {
+            const nomeArquivoReal = mat.tituloCompleto ? (mat.tituloCompleto + (mat.extensao ? "." + mat.extensao : "")) : mat.titulo;
             divMats.innerHTML += `
               <label style="cursor:pointer; display:block;">
-                <input type="checkbox" class="chk-envio chk-mat" value="${mat.arquivoId}" data-titulo="${mat.titulo}" data-duracao="${mat.duracao}" onchange="atualizarTemplateEmail()"> 
-                🎬 ${mat.titulo} (${mat.duracao}s)
+                <input type="checkbox" class="chk-envio chk-mat" value="${mat.arquivoId}" data-titulo="${mat.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${mat.duracao}" onchange="atualizarTemplateEmail()"> 
+                🎬 ${nomeArquivoReal} (${mat.duracao}s)
               </label>`;
-         });
-      }
+        });
     }
+}
 
     function atualizarTemplateEmail() {
-       let mapasMarcados = Array.from(document.querySelectorAll('.chk-mapa:checked'));
-       let matsMarcados = Array.from(document.querySelectorAll('.chk-mat:checked'));
+    let mapasMarcados = Array.from(document.querySelectorAll('.chk-mapa:checked'));
+    let matsMarcados = Array.from(document.querySelectorAll('.chk-mat:checked'));
 
-       let assuntoPadrão = "Arquivos de Campanha";
-       let corpoPadrão = "Olá, tudo bem?\n\nSegue em anexo o material solicitado para veiculação:\n\n";
-
-       // Se tiver mapa, extrai os dados do nome (ex: MAPA_123456_PARTIDO_CARGO.pdf)
-       if (mapasMarcados.length > 0) {
-           let nomePrimeiroMapa = mapasMarcados[0].getAttribute('data-nome');
-           let partes = nomePrimeiroMapa.replace('.pdf', '').split('_');
-           
-           if (partes.length >= 4) {
-               let numMapa = partes[1];
-               let partido = partes[2];
-               let cargo = partes[3];
-               
-               assuntoPadrão = `Mapa de Mídia nº ${numMapa} - ${partido} - ${cargo}`;
-               corpoPadrão += `📄 MAPA DE MÍDIA:\n- Número do Mapa: ${numMapa}\n- Partido/Coligação: ${partido}\n- Cargo: ${cargo}\n\n`;
-           } else {
-               assuntoPadrão = `Mapa de Mídia - ${nomePrimeiroMapa}`;
-               corpoPadrão += `📄 MAPAS:\n`;
-               mapasMarcados.forEach(m => corpoPadrão += `- ${m.getAttribute('data-nome')}\n`);
-               corpoPadrão += `\n`;
-           }
-       }
-
-       if (matsMarcados.length > 0) {
-           if (mapasMarcados.length === 0) assuntoPadrão = "Mídias de Campanha";
-           
-           corpoPadrão += `🎬 MATERIAIS / MÍDIAS INCLUSAS:\n`;
-           matsMarcados.forEach(chk => {
-              corpoPadrão += `- ${chk.getAttribute('data-titulo')} (${chk.getAttribute('data-duracao')} segundos)\n`;
-           });
-       }
-
-       corpoPadrão += "\nFicamos à disposição para qualquer dúvida.\n\nAtenciosamente.";
-
-       document.getElementById('email-assunto').value = assuntoPadrão;
-       document.getElementById('email-corpo').value = corpoPadrão;
+    // Resgata o Partido e Cargo do Filtro Geral
+    const filtroAtivo = document.getElementById('filtroPartido').value.toUpperCase().trim();
+    let partido = "";
+    let cargo = "";
+    if (filtroAtivo.includes('-')) {
+        const partes = filtroAtivo.split('-');
+        partido = partes[0].trim();
+        cargo = partes[1].trim();
     }
+
+    let assuntoPadrao = "Arquivos de Campanha";
+    let corpoPadrao = "Olá, tudo bem?\n\nSegue em anexo o material solicitado para veiculação:\n\n";
+
+    // Dados do Mapa
+    if (mapasMarcados.length > 0) {
+        let nomePrimeiroMapa = mapasMarcados[0].getAttribute('data-nome');
+        let partesMap = nomePrimeiroMapa.replace('.pdf', '').split('_');
+        
+        if (partesMap.length >= 4) {
+            let numMapa = partesMap[1];
+            assuntoPadrao = `Mapa de Mídia nº ${numMapa} - ${partido} - ${cargo}`;
+            corpoPadrao += `📄 MAPA DE MÍDIA:\n- Número do Mapa: ${numMapa}\n- Partido/Coligação: ${partido}\n- Cargo: ${cargo}\n\n`;
+        } else {
+            assuntoPadrao = `Mapa de Mídia - ${nomePrimeiroMapa}`;
+            corpoPadrao += `📄 MAPAS:\n`;
+            mapasMarcados.forEach(m => corpoPadrao += `- ${m.getAttribute('data-nome')}\n`);
+            corpoPadrao += `\n`;
+        }
+    }
+
+    // Dados de Materiais com Sobreposição de Assunto
+    if (matsMarcados.length > 0) {
+        if (partido && cargo) {
+            // Se houver mapa E materiais, ele une. Se for só material, fica "Materiais - ..."
+            assuntoPadrao = mapasMarcados.length > 0 
+                ? `Mapa e Materiais - ${partido} - ${cargo}` 
+                : `Materiais - ${partido} - ${cargo}`;
+        }
+        
+        corpoPadrao += `🎬 MATERIAIS / MÍDIAS INCLUSAS:\n`;
+        matsMarcados.forEach(chk => {
+            // Puxa o Titulo Completo gerado (Ex: POLI26 - BORA TRABALHAR GOVERNADOR...)
+            const tituloFinal = chk.getAttribute('data-titulocompleto') || chk.getAttribute('data-titulo');
+            corpoPadrao += `- ${tituloFinal} (${chk.getAttribute('data-duracao')} segundos)\n`;
+        });
+    }
+
+    corpoPadrao += "\nFicamos à disposição para qualquer dúvida.\n\nAtenciosamente.";
+    
+    // Assinatura de edição oculta (Muitas quebras de linha para ficar invisível no primeiro escaneamento de olhar)
+    corpoPadrao += "\n\n\n\n\n\n\n\n\n[Gerado por: G-opec gip]";
+
+    document.getElementById('email-assunto').value = assuntoPadrao;
+    document.getElementById('email-corpo').value = corpoPadrao;
+}
 
     function dispararEmail() {
        const para = document.getElementById('email-para').value.trim();
