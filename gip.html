@@ -1314,6 +1314,11 @@ function adicionarMaterialLegenda() {
 
 // FINALIZAR MAPA
 function finalizarMapa() {
+  const dtInicio = document.getElementById('mapa-inicio').value; // ex: YYYY-MM-DD
+  const dtFim = document.getElementById('mapa-fim').value;       // ex: YYYY-MM-DD
+
+  if (!dtInicio || !dtFim) return alert("Período do mapa não identificado.");
+
   const selects = document.querySelectorAll('.select-material');
   const mapaLegenda = {};
   let validacaoLegenda = true;
@@ -1357,43 +1362,53 @@ function finalizarMapa() {
   });
 
   const linhasTabela = document.querySelectorAll('#tabelaPolitica tbody tr');
-  let pularProximaLinha = false; // Substitui o antigo "blocoEmCancelamento"
+  let pularProximaLinha = false;
 
   linhasTabela.forEach(tr => {
     const rowIndex = tr.getAttribute('data-index');
     if (rowIndex === null || !dadosTabela[rowIndex] || tr.style.display === "none") return;
 
-    // Limpa o cancelamento APENAS dos dados que estão visíveis neste mapa (Protege o histórico dos outros)
-    dadosTabela[rowIndex][7] = false; 
-
-    const dataStr = tr.cells[0].innerText;
+    const dataStr = tr.cells[0].innerText; // Formato DD/MM/YYYY
     const bloco = tr.cells[1].innerText;
 
-    // Cancela a linha obedecendo a cronologia do 60s transversal
-    if (pularProximaLinha) {
-        dadosTabela[rowIndex][7] = true; 
-        dadosTabela[rowIndex][5] = ""; 
-        dadosTabela[rowIndex][6] = ""; 
-        dadosTabela[rowIndex][8] = ""; 
-        pularProximaLinha = false; 
-        return; 
-    }
+    // Converter dataStr para YYYY-MM-DD para comparar com o Período do Mapa
+    const partesData = dataStr.split('/');
+    if (partesData.length !== 3) return;
+    const dataIso = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
 
-    if (insercoesDigitadas[dataStr] && insercoesDigitadas[dataStr][bloco] && insercoesDigitadas[dataStr][bloco].length > 0) {
-        const itemAtribuido = insercoesDigitadas[dataStr][bloco].shift();
-        
-        dadosTabela[rowIndex][5] = itemAtribuido.duracao;
-        dadosTabela[rowIndex][6] = itemAtribuido.titulo;
-        dadosTabela[rowIndex][8] = itemAtribuido.letra; 
-        
-        if (itemAtribuido.duracao == 60 || itemAtribuido.duracao == '60') {
-            pularProximaLinha = true; // Aciona para a próxima linha visível, seja onde for!
-        }
-    } else {
-        dadosTabela[rowIndex][5] = 30;
-        dadosTabela[rowIndex][6] = "";
-        dadosTabela[rowIndex][8] = "";
+    // TRAVA CRUCIAL: Só mexe no registro se a data do registro estiver DENTRO do período do mapa ativo
+    if (dataIso >= dtInicio && dataIso <= dtFim) {
+      
+      // Limpa o status de cancelado apenas do período atual
+      dadosTabela[rowIndex][7] = false; 
+
+      // Cancela a linha obedecendo a cronologia do 60s transversal
+      if (pularProximaLinha) {
+          dadosTabela[rowIndex][7] = true; 
+          dadosTabela[rowIndex][5] = ""; 
+          dadosTabela[rowIndex][6] = ""; 
+          dadosTabela[rowIndex][8] = "-"; 
+          pularProximaLinha = false; 
+          return; 
+      }
+
+      if (insercoesDigitadas[dataStr] && insercoesDigitadas[dataStr][bloco] && insercoesDigitadas[dataStr][bloco].length > 0) {
+          const itemAtribuido = insercoesDigitadas[dataStr][bloco].shift();
+          
+          dadosTabela[rowIndex][5] = itemAtribuido.duracao;
+          dadosTabela[rowIndex][6] = itemAtribuido.titulo;
+          dadosTabela[rowIndex][8] = itemAtribuido.letra; 
+          
+          if (itemAtribuido.duracao == 60 || itemAtribuido.duracao == '60') {
+              pularProximaLinha = true; // Aciona para a próxima linha visível
+          }
+      } else {
+          dadosTabela[rowIndex][5] = 30;
+          dadosTabela[rowIndex][6] = "";
+          dadosTabela[rowIndex][8] = "";
+      }
     }
+    // Se a data estiver FORA do período (ex: dia 09), o bloco é ignorado e mantido intacto!
   });
 
   renderTabelaPrincipal();
