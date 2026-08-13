@@ -53,12 +53,12 @@ Fique tranquilo! O código é totalmente transparente, roda apenas na sua conta 
 Siga o passo a passo abaixo para autorizar a aplicação:
 
 
-**Passo 1:** esteja conectado a uma conta Google, caso contrario você receberá o erro 401 do servidor, basta fazer login no proprio site de busca do google(https://www.google.com/).
+**Passo 1:** Esteja conectado a uma conta Google, caso contrario você receberá o erro 401 do servidor, basta fazer login no proprio site de busca do google(https://www.google.com/).
 
 *(print do login Google)*
 > ![Print: Entrar na Conta](./prints/0.png)
 
-**Evite erros** caso ao fazer login você possua mais de uma conta, faça logout em todas e refaça o login apenas na conta que represente sua seção, caso contrario o servidor decidirá automaticamente qual conta será a principal.  
+**Evite erros!** Caso ao fazer login você possua mais de uma conta, faça logout em todas e refaça o login apenas na conta que represente sua seção, caso contrario o servidor decidirá automaticamente qual conta será a principal.  
 
  *(print da seleção de conta)*
 > ![Print: Selecionar Conta](./prints/00.png)
