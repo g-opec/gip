@@ -82,7 +82,7 @@ Siga o passo a passo abaixo para autorizar a aplicação:
 > ![Print: Acessar projeto](./prints/3.png)
 
 
-**Passo 5:** O Google listará quais permissões o sistema precisa (Ler arquivos do Drive, enviar e-mails, etc.). Role a página até o final e clique em **Permitir**.
+**Passo 5:** O Google listará quais permissões o sistema precisa (Ler arquivos do Drive, enviar e-mails, etc.). Click em selecionar tudo, Role a página até o final e clique em **Continuar**.
 
 > *(print da tela final de permissões)*
 > ![Print: Permitir acessos](./prints/4.png)
