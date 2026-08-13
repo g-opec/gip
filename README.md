@@ -55,27 +55,29 @@ Siga o passo a passo abaixo para autorizar a aplicação:
 **Passo 1:** Ao tentar implantar o projeto ou rodar o código pela primeira vez, um aviso de **"Autorização obrigatória"** vai aparecer. Clique em **Revisar permissões**.
 
 > *(print da tela de "Autorização Obrigatória")*
-> ![Print: Autorização Obrigatória](./caminho/para/print-1-autorizacao.png)
+> ![Print: Autorização Obrigatória](./prints/1.png)
 
 **Passo 2:** Uma janela do Google se abrirá. **Selecione a sua conta do Google** (a mesma onde você irá utilizar ou criou o projeto).
 
 > *(print da seleção de conta)*
-> ![Print: Selecionar Conta](./caminho/para/print-2-conta.png)
+> ![Print: Entrar na Conta](./prints/0.png)
+> ![Print: Selecionar Conta](./prints/00.png)
 
 **Passo 3:** A tela de alerta **"O Google não verificou este app"** será exibida. Não clique em "Voltar à segurança". Em vez disso, clique no link **Avançado** (ou *Advanced*), no canto inferior esquerdo.
 
 > *(print da tela de app não verificado com uma seta no "Avançado")*
-> ![Print: Tela de Aviso do Google](./caminho/para/print-3-aviso-google.png)
+> ![Print: Tela de Aviso do Google](./prints/2.png)
 
 **Passo 4:** Logo abaixo, aparecerá um novo link dizendo **"Acessar [Nome do projeto] (não seguro)"**. Clique neste link.
 
 > *(print mostrando o link "Acessar projeto não seguro")*
-> ![Print: Acessar projeto](./caminho/para/print-4-acessar-projeto.png)
+> ![Print: Acessar projeto](./prints/3.png)
 
 **Passo 5:** O Google listará quais permissões o sistema precisa (Ler arquivos do Drive, enviar e-mails, etc.). Role a página até o final e clique em **Permitir**.
 
 > *(print da tela final de permissões clicando em Permitir)*
-> ![Print: Permitir acessos](./caminho/para/print-5-permitir.png)
+> ![Print: Permitir acessos](./prints/4.png)
+> ![Print: Continuar](./prints/5.png)
 
 Pronto! A autorização foi concluída. Você só precisará fazer isso **uma única vez**. A partir de agora, o sistema funcionará normalmente de forma automatizada.
 
