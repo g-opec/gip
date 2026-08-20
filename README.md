@@ -2,7 +2,7 @@
 
 Bem-vindo ao repositório do **GIP (Gerenciador de Inserções Partidárias)**. Este projeto é uma aplicação web completa desenvolvida para automatizar e facilitar a gestão de campanhas políticas, especificamente no controle de inserções de rádio e TV, mapas de mídia e envio de materiais para emissoras.
 
-🌐 **Acesse a interface pública:** [https://g-opec.github.io/gip/](https://g-opec.github.io/gip/)
+🌐 **Acesse a interface pública:** <a href="[URL](https://g-opec.github.io/gip/)" target="_blank">[Texto](https://g-opec.github.io/gip/)</a>
 
 > **Nota de Arquitetura:** O link acima serve como o repositório do *Front-end* (Interface). Para que o sistema funcione lendo e gravando arquivos, ele opera em conjunto com um backend hospedado no **Google Apps Script**.
 
