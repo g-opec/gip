@@ -888,7 +888,7 @@ function getAnoDaTabela() {
  payload.mi = document.getElementById('mat-mi').value || 0;
  payload.hn = document.getElementById('mat-hn').value || 0;
  payload.hi = document.getElementById('mat-hi').value || 0;
- 
+
   // 5. Atualiza Interface Visual
   if (elStatus) {
     elStatus.innerText = "Salvando dados... Aguarde.";
@@ -1396,11 +1396,11 @@ function adicionarMaterialLegenda() {
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraPeca}</td>
     <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">-</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">${matEncontrado && matEncontrado.m ? matEncontrado.m + 's' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">${matEncontrado && matEncontrado.mn ? matEncontrado.mn + 's' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">${matEncontrado && matEncontrado.mi ? matEncontrado.mi + 's' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">${matEncontrado && matEncontrado.hn ? matEncontrado.hn + 's' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">${matEncontrado && matEncontrado.hi ? matEncontrado.hi + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">'-'</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">'-'</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">'-'</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">'-'</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">'-'</td>
   `;
   tbody.appendChild(tr);
   contadorMateriais++;
