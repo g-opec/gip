@@ -1380,11 +1380,11 @@ function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraEspecifica}</td>
     <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">${matEncontrado ? matEncontrado.duracao + 's' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">${matEncontrado && matEncontrado.m ? matEncontrado.m + '%' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">${matEncontrado && matEncontrado.mn ? matEncontrado.mn + '%' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">${matEncontrado && matEncontrado.mi ? matEncontrado.mi + '%' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">${matEncontrado && matEncontrado.hn ? matEncontrado.hn + '%' : '-'}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">${matEncontrado && matEncontrado.hi ? matEncontrado.hi + '%' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">${matEncontrado && matEncontrado.m ? segundosParaPorcentagem(matEncontrado.m, m.duracao) + '%' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">${matEncontrado && matEncontrado.mn ? segundosParaPorcentagem(matEncontrado.mn, m.duracao) + '%' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">${matEncontrado && matEncontrado.mi ? segundosParaPorcentagem(matEncontrado.mi, m.duracao) + '%' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">${matEncontrado && matEncontrado.hn ? segundosParaPorcentagem(matEncontrado.hn, m.duracao) + '%' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">${matEncontrado && matEncontrado.hi ? segundosParaPorcentagem(matEncontrado.m, m.duracao) + '%' : '-'}</td>
   `;
   tbody.appendChild(tr);
   contadorMateriais++;
