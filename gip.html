@@ -43,6 +43,7 @@
         <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
         <button class="tab-btn" onclick="switchTab('mapa')">3. Gerar Mapa</button>
         <button class="tab-btn" onclick="switchTab('envios')">4. Envios (E-mail)</button>
+        <button class="tab-btn" onclick="switchTab('relatorio'); renderRelatorioCotas();">5. Relatório de Cotas</button>
       </div>
       <div style="padding-right: 15px;">
         <a href="https://g-opec.github.io/system/" target="_blank">
@@ -258,6 +259,41 @@
 
       </div>
     </div>
+
+    <!-- SEÇÃO 5: RELATÓRIO DE COTAS -->
+    <div id="tab-relatorio" class="tab-content">
+      <div style="background: #fff; padding: 20px; border-radius: 6px; border: 1px solid #ccc;">
+        <h3 style="margin-top:0;">Relatório de Cotas (Baseado no Filtro Atual)</h3>
+        
+        <!-- Painel de Resumo / Totais -->
+        <div id="relatorio-resumo" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+           <p style="color: #666;">Aguardando geração do relatório...</p>
+        </div>
+
+        <!-- Tabela da Lista de Materiais -->
+        <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">Lista de Materiais Utilizados</h4>
+        <div style="overflow-x: auto;">
+          <table id="tabela-relatorio-materiais" style="width: 100%; border-collapse: collapse; text-align: center;">
+            <thead>
+              <tr style="background: #f4f5f7;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Título do Material</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">Duração</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 100px;">Inserções</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">M.</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">M.N.</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">M.I.</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">H.N.</th>
+                <th style="border: 1px solid #ddd; padding: 8px; width: 80px;">H.I.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Preenchido via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -726,6 +762,7 @@ function filtrarTabelaPolitica() {
     atualizarTotalVisivel();
     if (typeof renderListaMateriais === 'function') renderListaMateriais();
     if (typeof renderizarChecksEnvio === 'function') renderizarChecksEnvio();
+    if (typeof renderRelatorioCotas === 'function') renderRelatorioCotas();
     limparTelasDependentes();
 }
 
@@ -1848,6 +1885,133 @@ function renderizarChecksEnvio() {
          .enviarEmailGS(para, cc, assunto, corpo, anexosIds);
     }
 
+    // ==========================================
+// MÓDULO DE RELATÓRIO DE COTAS
+// ==========================================
+function renderRelatorioCotas() {
+    const linhas = document.querySelectorAll('#tabelaPolitica tbody tr');
+    let totalInsercoes = 0;
+    let totalTempoSegundos = 0;
+
+    // Acumuladores de cotas (em segundos)
+    let totalM = 0, totalMN = 0, totalMI = 0, totalHN = 0, totalHI = 0;
+    const materiaisUsados = {};
+
+    // 1. Varre apenas as linhas que estão visíveis (respeitando o filtro da tabela) e que não estão canceladas
+    linhas.forEach(tr => {
+        if (tr.style.display !== "none" && !tr.classList.contains('linha-cancelada')) {
+            const rowIndex = tr.getAttribute('data-index');
+            
+            if (rowIndex !== null && dadosTabela[rowIndex]) {
+                const l = dadosTabela[rowIndex];
+                const titulo = l[6] || ""; 
+                const duracao = parseInt(l[5]) || 0; 
+                
+                // Contabiliza apenas se tiver um material efetivamente associado
+                if (titulo && duracao > 0) {
+                    totalInsercoes++;
+                    totalTempoSegundos += duracao;
+
+                    // Procura as propriedades deste material no banco de materiais original
+                    let mat = bancoMateriais.find(m => m.titulo === titulo);
+                    let matM = 0, matMN = 0, matMI = 0, matHN = 0, matHI = 0;
+                    
+                    if (mat) {
+                         matM = parseInt(mat.m) || 0;
+                         matMN = parseInt(mat.mn) || 0;
+                         matMI = parseInt(mat.mi) || 0;
+                         matHN = parseInt(mat.hn) || 0;
+                         matHI = parseInt(mat.hi) || 0;
+                    }
+
+                    // Acumula os totais em segundos para o cenário geral
+                    totalM += matM;
+                    totalMN += matMN;
+                    totalMI += matMI;
+                    totalHN += matHN;
+                    totalHI += matHI;
+
+                    // Agrupa no objeto de materiais usados para a lista de baixo
+                    if (!materiaisUsados[titulo]) {
+                        materiaisUsados[titulo] = {
+                            duracao: duracao,
+                            qtd: 0,
+                            m: matM, mn: matMN, mi: matMI, hn: matHN, hi: matHI
+                        };
+                    }
+                    materiaisUsados[titulo].qtd++;
+                }
+            }
+        }
+    });
+
+    // 2. Função auxiliar para converter o tempo acumulado no relatório para porcentagem global
+    const calcPercGlobal = (val) => totalTempoSegundos > 0 ? ((val / totalTempoSegundos) * 100).toFixed(1) : 0;
+
+    // 3. Monta os cards dinâmicos de porcentagem global e inserções
+    const resumoHtml = `
+        <div style="flex: 1; min-width: 140px; background: #e9ecef; padding: 15px; border-radius: 6px; text-align: center;">
+            <h4 style="margin: 0; color: #333;">Total Inserções</h4>
+            <p style="font-size: 26px; font-weight: bold; margin: 5px 0; color: #0052cc;">${totalInsercoes}</p>
+            <small style="color: #666;">Tempo Total: ${totalTempoSegundos}s</small>
+        </div>
+        <div style="flex: 1; min-width: 110px; background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #ddd;">
+            <h4 style="margin: 0; color: #555;">Mulheres (M)</h4>
+            <p style="font-size: 22px; font-weight: bold; margin: 5px 0;">${calcPercGlobal(totalM)}%</p>
+        </div>
+        <div style="flex: 1; min-width: 110px; background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #ddd;">
+            <h4 style="margin: 0; color: #555;">Mulh. Negras</h4>
+            <p style="font-size: 22px; font-weight: bold; margin: 5px 0;">${calcPercGlobal(totalMN)}%</p>
+        </div>
+        <div style="flex: 1; min-width: 110px; background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #ddd;">
+            <h4 style="margin: 0; color: #555;">Mulh. Indíg.</h4>
+            <p style="font-size: 22px; font-weight: bold; margin: 5px 0;">${calcPercGlobal(totalMI)}%</p>
+        </div>
+        <div style="flex: 1; min-width: 110px; background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #ddd;">
+            <h4 style="margin: 0; color: #555;">Homens Neg.</h4>
+            <p style="font-size: 22px; font-weight: bold; margin: 5px 0;">${calcPercGlobal(totalHN)}%</p>
+        </div>
+        <div style="flex: 1; min-width: 110px; background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #ddd;">
+            <h4 style="margin: 0; color: #555;">Homens Indíg.</h4>
+            <p style="font-size: 22px; font-weight: bold; margin: 5px 0;">${calcPercGlobal(totalHI)}%</p>
+        </div>
+    `;
+    
+    const containerResumo = document.getElementById('relatorio-resumo');
+    if(containerResumo) containerResumo.innerHTML = resumoHtml;
+
+    // 4. Preenche a tabela inferior iterando sobre a lista de materiais usados
+    const tbody = document.querySelector("#tabela-relatorio-materiais tbody");
+    if(tbody) {
+        tbody.innerHTML = "";
+        
+        const chavesMateriais = Object.keys(materiaisUsados);
+        
+        if (chavesMateriais.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding: 20px; color: #777;'>Nenhuma inserção com material atribuído encontrada no filtro atual.</td></tr>";
+        } else {
+            chavesMateriais.forEach(tit => {
+                const mat = materiaisUsados[tit];
+                
+                // Transforma os segundos individuais do material em porcentagem de sua própria duração
+                const percMat = (val) => mat.duracao > 0 ? Math.round((val / mat.duracao) * 100) : 0;
+                
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: left; font-weight: 500;">${tit}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${mat.duracao}s</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; background: #f4f5f7;"><b>${mat.qtd}</b></td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${percMat(mat.m)}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${percMat(mat.mn)}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${percMat(mat.mi)}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${percMat(mat.hn)}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${percMat(mat.hi)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+}
 
   </script>
 </body>
