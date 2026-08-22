@@ -871,11 +871,7 @@ function getAnoDaTabela() {
   const ano2Digitos = ano.toString().slice(-2);
   const tituloCompleto = `POLI${ano2Digitos} - ${partido.toUpperCase()} ${cargo.toUpperCase()} ${tituloSimples.toUpperCase()}`;
 
- payload.m = document.getElementById('mat-m').value || 0;
- payload.mn = document.getElementById('mat-mn').value || 0;
- payload.mi = document.getElementById('mat-mi').value || 0;
- payload.hn = document.getElementById('mat-hn').value || 0;
- payload.hi = document.getElementById('mat-hi').value || 0;
+ 
 
   let payload = {
     id: id, 
@@ -887,6 +883,12 @@ function getAnoDaTabela() {
     arquivoBase64: null, fileName: null, mimeType: null
   };
 
+  payload.m = document.getElementById('mat-m').value || 0;
+ payload.mn = document.getElementById('mat-mn').value || 0;
+ payload.mi = document.getElementById('mat-mi').value || 0;
+ payload.hn = document.getElementById('mat-hn').value || 0;
+ payload.hi = document.getElementById('mat-hi').value || 0;
+ 
   // 5. Atualiza Interface Visual
   if (elStatus) {
     elStatus.innerText = "Salvando dados... Aguarde.";
