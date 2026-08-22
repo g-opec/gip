@@ -1,43 +1,142 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base target="_top">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    :root { --primary: #0052cc; --bg: #f4f6f9; --border: #dee2e6; }
-    body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #333; margin: 20px; }
-    .main-section { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    
+    :root {
+      --primary: #0052cc;
+      --bg: #f4f6f9;
+      --border: #dee2e6;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: #333;
+      margin: 20px;
+    }
+
+    .main-section {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
     /* ABAS */
-    .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-    .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; color: #555; }
-    .tab-btn.active { border-bottom: 3px solid var(--primary); color: var(--primary); font-weight: bold; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .tab-btn.active {
+      border-bottom: 3px solid var(--primary);
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     /* UI Genérica */
-    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
-    .btn-primary { background-color: var(--primary); color: white; }
-    .btn-success { background-color: #28a745; color: white; }
-    .btn-secondary { background-color: #6c757d; color: white; }
-    .btn-info { background-color: #17a2b8; color: white; }
-    input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-success {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-info {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    input,
+    select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
     /* Tabelas */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f4f5f7; font-weight: bold; }
-    .linha-cancelada td { text-decoration: line-through; color: #a0a0a0; background: #f9f9f9; }
-    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f4f5f7;
+      font-weight: bold;
+    }
+
+    .linha-cancelada td {
+      text-decoration: line-through;
+      color: #a0a0a0;
+      background: #f9f9f9;
+    }
+
     /* Lista de Materiais */
-    #lista-materiais li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    #lista-materiais li:hover { background-color: #f8f9fa; }
+    #lista-materiais li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #lista-materiais li:hover {
+      background-color: #f8f9fa;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="main-section">
-    <div class="tabs" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; margin-bottom: 20px; padding-bottom: 5px;">
+    <div class="tabs"
+      style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; margin-bottom: 20px; padding-bottom: 5px;">
       <div>
         <button class="tab-btn active" onclick="switchTab('tabela')">1. Programação</button>
         <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
@@ -47,7 +146,7 @@
       </div>
       <div style="padding-right: 15px;">
         <a href="https://g-opec.github.io/system/" target="_blank">
-        <img src="https://g-opec.github.io/master/fav/favicon-32x32.png" alt="G-OPEC" style="display: block; width: 32px; height: 32px;">
+          <img src="https://g-opec.github.io/master/fav/favicon-32x32.png" alt="G-OPEC" style="display: block; width: 32px; height: 32px;">
         </a>
       </div>
     </div>
@@ -64,63 +163,77 @@
       <div id="statusMessage" style="font-weight:bold; margin-bottom: 15px; color:#555;">Aguardando importação...</div>
 
       <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-    <input type="text" id="filtroPartido" placeholder="🔎 Filtrar por Partido - Cargo..." onkeyup="filtrarTabelaPolitica()" list="listaPartidos" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; font-size: 14px;">
-    <datalist id="listaPartidos"></datalist>
+        <input type="text" id="filtroPartido" placeholder="🔎 Filtrar por Partido - Cargo..." onkeyup="filtrarTabelaPolitica()" list="listaPartidos" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; font-size: 14px;">
+        <datalist id="listaPartidos"></datalist>
       </div>
 
       <table id="tabelaPolitica">
         <thead>
-          <tr><th>Data</th><th>Bloco</th><th>Seq.</th><th>Partido / Federação / Coligação</th><th>Cargo</th><th>Dur.</th><th>Título do Material</th></tr>
+          <tr>
+            <th>Data</th>
+            <th>Bloco</th>
+            <th>Seq.</th>
+            <th>Partido / Federação / Coligação</th>
+            <th>Cargo</th>
+            <th>Dur.</th>
+            <th>Título do Material</th>
+          </tr>
         </thead>
         <tbody></tbody>
-         <tfoot>
-            <tr style="background-color: #f4f5f7;">
-                <td colspan="7" style="text-align: right; font-weight: bold; color: #333;">Total de Inserções Válidas (Visíveis):</td>
-                <td id="totalInsercoes" style="font-weight: 900; color: #1e40af; font-size: 15px;">0</td>
-            </tr>
+        <tfoot>
+          <tr style="background-color: #f4f5f7;">
+            <td colspan="7" style="text-align: right; font-weight: bold; color: #333;">Total de Inserções Válidas
+              (Visíveis):</td>
+            <td id="totalInsercoes" style="font-weight: 900; color: #1e40af; font-size: 15px;">0</td>
+          </tr>
         </tfoot>
       </table>
     </div>
 
     <div id="tab-arquivos" class="tab-content">
       <div style="display: flex; gap: 20px;">
-        
+
         <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 6px; background:#f8f9fa;">
           <h3 style="margin-top:0;">Cadastrar / Editar Material</h3>
           <input type="hidden" id="mat-id">
-          
+
           <div style="display:flex; flex-direction:column; gap: 10px;">
             <div>
-  <label><strong>Arquivo (Opcional)</strong></label><br>
-  <div style="display: flex; gap: 5px;">
-    <input type="file" id="mat-file" accept="audio/*, video/*" style="flex-grow:1;">
-    <button class="btn btn-info" onclick="extrairMetadados()">Extrair Dados</button>
-  </div>
-</div>
+              <label><strong>Arquivo (Opcional)</strong></label><br>
+              <div style="display: flex; gap: 5px;">
+                <input type="file" id="mat-file" accept="audio/*, video/*" style="flex-grow:1;">
+                <button class="btn btn-info" onclick="extrairMetadados()">Extrair Dados</button>
+              </div>
+            </div>
 
-<div style="margin-top: 10px;">
-  <label><strong>Título Simples do Material *</strong></label><br>
-  <input type="text" id="mat-titulo" style="width: 100%;" required>
-</div>
+            <div style="margin-top: 10px;">
+              <label><strong>Título Simples do Material *</strong></label><br>
+              <input type="text" id="mat-titulo" style="width: 100%;" required>
+            </div>
 
-<div style="margin-top: 10px;">
-  <label><strong>Duração (Segundos) *</strong></label><br>
-  <select id="mat-duracao" style="width: 100px;" required>
+            <div style="margin-top: 10px;">
+              <label><strong>Duração (Segundos) *</strong></label><br>
+              <select id="mat-duracao" style="width: 100px;" required>
                 <option value="30">30s</option>
                 <option value="60">60s</option>
-              </select>  
+              </select>
             </div>
             <div style="margin-top: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 4px; background: #fff;">
-  <label><strong>Distribuição de Tempo (Cotas em Segundos):</strong></label>
-  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 11px;">
-    <div><label>Mulheres (M.)</label><br><input type="number" id="mat-m" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-m')"> <span id="perc-m" style="color:gray;">0%</span></div>
-    <div><label>Mulh. Negras (M.N.)</label><br><input type="number" id="mat-mn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mn')"> <span id="perc-mn" style="color:gray;">0%</span></div>
-    <div><label>Mulh. Indíg. (M.I.)</label><br><input type="number" id="mat-mi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mi')"> <span id="perc-mi" style="color:gray;">0%</span></div>
-    <div><label>Homens Negros (H.N.)</label><br><input type="number" id="mat-hn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hn')"> <span id="perc-hn" style="color:gray;">0%</span></div>
-    <div><label>Homens Indíg. (H.I.)</label><br><input type="number" id="mat-hi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hi')"> <span id="perc-hi" style="color:gray;">0%</span></div>
-  </div>
-</div>
-            
+              <label><strong>Distribuição de Tempo (Cotas em Segundos):</strong></label>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 11px;">
+                <div><label>Mulheres (M.)</label><br><input type="number" id="mat-m" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-m')">
+                  <span id="perc-m" style="color:gray;">0%</span></div>
+                <div><label>Mulh. Negras (M.N.)</label><br><input type="number" id="mat-mn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mn')">
+                  <span id="perc-mn" style="color:gray;">0%</span></div>
+                <div><label>Mulh. Indíg. (M.I.)</label><br><input type="number" id="mat-mi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mi')">
+                  <span id="perc-mi" style="color:gray;">0%</span></div>
+                <div><label>Homens Negros (H.N.)</label><br><input type="number" id="mat-hn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hn')">
+                  <span id="perc-hn" style="color:gray;">0%</span></div>
+                <div><label>Homens Indíg. (H.I.)</label><br><input type="number" id="mat-hi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hi')">
+                  <span id="perc-hi" style="color:gray;">0%</span></div>
+              </div>
+            </div>
+
             <div style="margin-top: 10px; display: flex; gap: 10px;">
               <button class="btn btn-primary" onclick="salvarMaterial()" id="btn-salvar-mat">Salvar Material</button>
               <button class="btn btn-secondary" onclick="resetarFormMaterial()">Novo Formulário</button>
@@ -132,10 +245,13 @@
         <div style="flex: 1; display:flex; flex-direction:column; gap:15px;">
           <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; height: 250px; overflow-y:auto;">
             <h3 style="margin-top:0;">Lista de Materiais</h3>
-            <ul id="lista-materiais"><li>Aguardando carregamento...</li></ul>
+            <ul id="lista-materiais">
+              <li>Aguardando carregamento...</li>
+            </ul>
           </div>
 
-          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; background: #2c2c32; color:white; text-align:center;">
+          <div
+            style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; background: #2c2c32; color:white; text-align:center;">
             <h4 style="margin-top:0; color:#ddd;">Pré-visualização</h4>
             <audio id="audio-player" controls style="display: none; width: 100%;"></audio>
             <video id="video-player" controls style="display: none; width: 100%; max-height: 150px;"></video>
@@ -146,52 +262,55 @@
     </div>
 
     <div id="tab-mapa" class="tab-content">
-      <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; display:flex; gap:15px; align-items:center;">
+      <div
+        style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; display:flex; gap:15px; align-items:center;">
         <div><label>Início: </label><input type="date" id="mapa-inicio"></div>
         <div><label>Fim: </label><input type="date" id="mapa-fim"></div>
         <button class="btn btn-primary" onclick="gerarGradeMapa()">Gerar Grade</button>
       </div>
 
-      <div id="container-mapa-gerado" style="display: none; border: 1px solid #ddd; padding: 20px; border-radius: 6px; background: #fff;">
-    
-    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-      <h3 style="margin: 0;">MAPA DE MÍDIA Nº <span id="mapa-numero">---</span> - <span id="mapa-partido-nome">PARTIDO</span> - <span id="mapa-partido-cargo">CARGO</span></h3>
-      <p style="margin: 5px 0;">Período: <span id="mapa-periodo-texto"></span></p>
-    </div>
+      <div id="container-mapa-gerado"
+        style="display: none; border: 1px solid #ddd; padding: 20px; border-radius: 6px; background: #fff;">
 
-    <div style="display: flex; flex-direction: column; gap: 20px;">
-  <div style="width: 100%;">
-        <h4 style="margin-top: 0;">Legenda de Materiais</h4>
-        <button class="btn btn-secondary" onclick="adicionarMaterialLegenda()" style="margin-bottom: 10px; font-size: 12px;">+ Adicionar Peça</button>
-        <table id="tabela-legendas" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background: #f4f5f7;">
-              <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Peça</th>
-              <th style="border: 1px solid #ddd; padding: 8px;">Título do Material</th>
-              <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Dur.</th>
-    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.</th>
-    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.N.</th>
-    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.I.</th>
-    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.N.</th>
-    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.I.</th>
-  </tr>
-          </thead>
-          <tbody>
-            </tbody>
-        </table>
-      </div>
+        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+          <h3 style="margin: 0;">MAPA DE MÍDIA Nº <span id="mapa-numero">---</span> -
+            <span id="mapa-partido-nome">PARTIDO</span> - <span id="mapa-partido-cargo">CARGO</span></h3>
+          <p style="margin: 5px 0;">Período: <span id="mapa-periodo-texto"></span></p>
+        </div>
 
-      <div style="flex: 2; min-width: 500px; overflow-x: auto;">
-        <h4 style="margin-top: 0;">Grade de Distribuição</h4>
-        <table id="tabela-grade-mapa" style="width: 100%; border-collapse: collapse; text-align: center;">
-          <thead>
-            </thead>
-          <tbody>
-            </tbody>
-        </table>
-      </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="width: 100%;">
+            <h4 style="margin-top: 0;">Legenda de Materiais</h4>
+            <button class="btn btn-secondary" onclick="adicionarMaterialLegenda()" style="margin-bottom: 10px; font-size: 12px;">+ Adicionar Peça</button>
+            <table id="tabela-legendas" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f4f5f7;">
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Peça</th>
+                  <th style="border: 1px solid #ddd; padding: 8px;">Título do Material</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Dur.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.N.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.I.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.N.</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.I.</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
 
-    </div>
+          <div style="flex: 2; min-width: 500px; overflow-x: auto;">
+            <h4 style="margin-top: 0;">Grade de Distribuição</h4>
+            <table id="tabela-grade-mapa" style="width: 100%; border-collapse: collapse; text-align: center;">
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
         <div style="text-align: right; margin-top: 20px;">
           <button class="btn btn-success" onclick="finalizarMapa()">Finalizar e Salvar Mapa</button>
         </div>
@@ -200,10 +319,10 @@
     <!-- SEÇÃO 4: ENVIOS -->
     <div id="tab-envios" class="tab-content">
       <div style="display: flex; gap: 20px;">
-        
+
         <!-- COLUNA ESQUERDA: LISTA DE ARQUIVOS E CONTATOS -->
         <div style="flex: 1; display:flex; flex-direction:column; gap:15px;">
-          
+
           <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; background:#f8f9fa;">
             <h3 style="margin-top:0;">Lista de Contatos Padrão</h3>
             <p style="font-size:12px; color:#666; margin-top:-10px;">Separe os e-mails por vírgula.</p>
@@ -212,25 +331,28 @@
             <span id="status-contatos" style="font-size:12px; color:green; margin-left:10px;"></span>
           </div>
 
-          <div style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; flex-grow:1; overflow-y:auto; max-height:400px;">
+          <div
+            style="border: 1px solid #ccc; padding: 15px; border-radius: 6px; flex-grow:1; overflow-y:auto; max-height:400px;">
             <h3 style="margin-top:0;">Selecionar Anexos</h3>
-            
+
             <h4 style="margin-bottom:5px; border-bottom:1px solid #eee;">Mapas Gerados</h4>
-            <div id="check-list-mapas" style="font-size:14px; margin-bottom:15px; display:flex; flex-direction:column; gap:5px;">
-               <i>Carregando mapas...</i>
+            <div id="check-list-mapas"
+              style="font-size:14px; margin-bottom:15px; display:flex; flex-direction:column; gap:5px;">
+              <i>Carregando mapas...</i>
             </div>
 
             <h4 style="margin-bottom:5px; border-bottom:1px solid #eee;">Materiais / Mídias</h4>
             <div id="check-list-materiais" style="font-size:14px; display:flex; flex-direction:column; gap:5px;">
-               <i>Carregando materiais...</i>
+              <i>Carregando materiais...</i>
             </div>
           </div>
         </div>
 
         <!-- COLUNA DIREITA: COMPOSIÇÃO DO E-MAIL -->
-        <div style="flex: 1.5; border: 1px solid #ccc; padding: 20px; border-radius: 6px; background: #fff; display:flex; flex-direction:column; gap: 10px;">
+        <div
+          style="flex: 1.5; border: 1px solid #ccc; padding: 20px; border-radius: 6px; background: #fff; display:flex; flex-direction:column; gap: 10px;">
           <h3 style="margin-top:0;">Compor E-mail</h3>
-          
+
           <div>
             <label><strong>Para (Destinatários Principais):</strong></label>
             <textarea id="email-para" rows="2" style="width: 100%; border:1px solid #ccc; border-radius:4px; padding:8px;" placeholder="Os contatos padrão aparecerão aqui..."></textarea>
@@ -263,15 +385,16 @@
     <!-- SEÇÃO 5: RELATÓRIO DE COTAS -->
     <div id="tab-relatorio" class="tab-content">
       <div style="background: #fff; padding: 20px; border-radius: 6px; border: 1px solid #ccc;">
-        <h3 style="margin-top:0;">Relatório de Cotas (Baseado no Filtro Atual)</h3>
-        
+        <h3 id="titulo-relatorio-cotas" style="margin-top:0;">Relatório de Cotas - Todos</h3>
+
         <!-- Painel de Resumo / Totais -->
         <div id="relatorio-resumo" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
-           <p style="color: #666;">Aguardando geração do relatório...</p>
+          <p style="color: #666;">Aguardando geração do relatório...</p>
         </div>
 
         <!-- Tabela da Lista de Materiais -->
-        <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">Lista de Materiais Utilizados</h4>
+        <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">Lista de Materiais Utilizados
+        </h4>
         <div style="overflow-x: auto;">
           <table id="tabela-relatorio-materiais" style="width: 100%; border-collapse: collapse; text-align: center;">
             <thead>
@@ -1886,14 +2009,20 @@ function renderizarChecksEnvio() {
          .enviarEmailGS(para, cc, assunto, corpo, anexosIds);
     }
 
-    // ==========================================
+// ==========================================
 // MÓDULO DE RELATÓRIO DE COTAS
 // ==========================================
 function renderRelatorioCotas() {
     const linhas = document.querySelectorAll('#tabelaPolitica tbody tr');
     let totalInsercoes = 0;
     let totalTempoSegundos = 0;
-
+    const inputFiltro = document.getElementById('filtroPartido'); 
+    const valorFiltro = (inputFiltro && inputFiltro.value.trim() !== "") ? inputFiltro.value : "Todos";
+    
+    const tituloEl = document.getElementById('titulo-relatorio-cotas');
+    if (tituloEl) {
+        tituloEl.innerText = "Relatório de Cotas - " + valorFiltro;
+    }
     // Acumuladores de cotas (em segundos)
     let totalM = 0, totalMN = 0, totalMI = 0, totalHN = 0, totalHI = 0;
     const materiaisUsados = {};
@@ -2016,4 +2145,5 @@ function renderRelatorioCotas() {
 
   </script>
 </body>
+
 </html>
