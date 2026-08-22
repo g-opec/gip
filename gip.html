@@ -109,6 +109,16 @@
                 <option value="60">60s</option>
               </select>  
             </div>
+            <div style="margin-top: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 4px; background: #fff;">
+  <label><strong>Distribuição de Tempo (Cotas em Segundos):</strong></label>
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 11px;">
+    <div><label>Mulheres (M.)</label><br><input type="number" id="mat-m" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-m')"> <span id="perc-m" style="color:gray;">0%</span></div>
+    <div><label>Mulh. Negras (M.N.)</label><br><input type="number" id="mat-mn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mn')"> <span id="perc-mn" style="color:gray;">0%</span></div>
+    <div><label>Mulh. Indíg. (M.I.)</label><br><input type="number" id="mat-mi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-mi')"> <span id="perc-mi" style="color:gray;">0%</span></div>
+    <div><label>Homens Negros (H.N.)</label><br><input type="number" id="mat-hn" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hn')"> <span id="perc-hn" style="color:gray;">0%</span></div>
+    <div><label>Homens Indíg. (H.I.)</label><br><input type="number" id="mat-hi" style="width: 50px;" min="0" oninput="calcularPorcentagem(this, 'perc-hi')"> <span id="perc-hi" style="color:gray;">0%</span></div>
+  </div>
+</div>
             
             <div style="margin-top: 10px; display: flex; gap: 10px;">
               <button class="btn btn-primary" onclick="salvarMaterial()" id="btn-salvar-mat">Salvar Material</button>
@@ -157,8 +167,13 @@
             <tr style="background: #f4f5f7;">
               <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Peça</th>
               <th style="border: 1px solid #ddd; padding: 8px;">Título do Material</th>
-              <th style="border: 1px solid #ddd; padding: 8px; width: 60px; text-align: center;">Dur.</th>
-            </tr>
+              <th style="border: 1px solid #ddd; padding: 8px; width: 50px; text-align: center;">Dur.</th>
+    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.</th>
+    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.N.</th>
+    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">M.I.</th>
+    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.N.</th>
+    <th style="border: 1px solid #ddd; padding: 8px; width: 40px; text-align: center;">H.I.</th>
+  </tr>
           </thead>
           <tbody>
             </tbody>
@@ -633,7 +648,12 @@ function organizarTextoPDF(textoBruto) {
       matriz[i][5] || "", // 5: Dur.
       matriz[i][6] || "", // 6: Título
       isCancelado,        // 7: Cancelado (Booleano Interno)
-      letraSalva          // 8: LETRA DA PEÇA (Aqui mantemos o "-", ou o vazio, ou a letra)
+      letraSalva,         // 8: LETRA DA PEÇA (Aqui mantemos o "-", ou o vazio, ou a letra)
+      matriz[i][9] || "", // 9: M
+      matriz[i][10] || "",// 10: MN
+      matriz[i][11] || "",// 11: MI
+      matriz[i][12] || "",// 12: HN
+      matriz[i][13] || "" // 13: HI
     ]);
   }
   renderTabelaPrincipal();
@@ -748,16 +768,16 @@ function getAnoDaTabela() {
   
   document.getElementById('statusMessage').innerText = "Salvando CSV no Drive...";
   
-  const cabecalhos = ["Data", "Bloco", "Seq.", "Partido / Federação / Coligação", "Cargo", "Dur.", "Título do Material", "Letra"];
+  const cabecalhos = ["Data", "Bloco", "Seq.", "Partido / Federação / Coligação", "Cargo", "Dur.", "Título do Material", "Letra", "Título do Material", "Letra", "M", "MN", "MI", "HN", "HI"];
   
   // Mantemos TODAS as linhas. 
   // Se estiver cancelada (l[7]), forçamos o valor de Duração, Título e Letra para representar o vazio/cancelado.
   const dadosParaCSV = dadosTabela.map(l => {
       const isCancelado = l[7];
       if (isCancelado) {
-          return [l[0], l[1], l[2], l[3], l[4], "", "", "-"]; 
+          return [l[0], l[1], l[2], l[3], l[4], "", "", "-", "", "", "", "", ""]; 
       } else {
-          return [l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[8] || ""];
+          return [l[0], l[1], l[2], l[3], l[4], l[5], l[6], l[8] || "", l[9]||"", l[10]||"", l[11]||"", l[12]||"", l[13]||""];
       }
   });
   
@@ -793,6 +813,8 @@ function getAnoDaTabela() {
   document.getElementById('mat-titulo').value = "";
   document.getElementById('mat-duracao').value = "30";
   document.getElementById('mat-file').value = "";
+  ['mat-m', 'mat-mn', 'mat-mi', 'mat-hn', 'mat-hi'].forEach(id => document.getElementById(id).value = "");
+  recalcularTodasPorcentagens();
   document.getElementById('status-mat').innerText = "";
   document.getElementById('btn-salvar-mat').innerText = "Salvar Material";
 }
@@ -848,6 +870,12 @@ function getAnoDaTabela() {
   // 4. Lógica de Nomenclatura: POLI26 - PARTIDO CARGO TITULO
   const ano2Digitos = ano.toString().slice(-2);
   const tituloCompleto = `POLI${ano2Digitos} - ${partido.toUpperCase()} ${cargo.toUpperCase()} ${tituloSimples.toUpperCase()}`;
+
+ payload.m = document.getElementById('mat-m').value || 0;
+ payload.mn = document.getElementById('mat-mn').value || 0;
+ payload.mi = document.getElementById('mat-mi').value || 0;
+ payload.hn = document.getElementById('mat-hn').value || 0;
+ payload.hi = document.getElementById('mat-hi').value || 0;
 
   let payload = {
     id: id, 
@@ -962,9 +990,16 @@ function excluirMaterial(id, titulo) {
   document.getElementById('mat-id').value = mat.id;
   document.getElementById('mat-titulo').value = mat.titulo;
   document.getElementById('mat-duracao').value = mat.duracao;
+  
+  document.getElementById('mat-m').value = mat.m || "";
+  document.getElementById('mat-mn').value = mat.mn || "";
+  document.getElementById('mat-mi').value = mat.mi || "";
+  document.getElementById('mat-hn').value = mat.hn || "";
+  document.getElementById('mat-hi').value = mat.hi || "";
+  recalcularTodasPorcentagens();
+  
   document.getElementById('btn-salvar-mat').innerText = "Atualizar Material";
   document.getElementById('status-mat').innerText = mat.temArquivo ? "Arquivo já anexado. Anexar outro o substituirá." : "Material sem arquivo.";
-  document.getElementById('status-mat').style.color = "gray";
 }
 
 // Função que sincroniza as peças mostradas apenas com o Partido/Cargo ativo (Com proteção contra dados antigos)
@@ -1024,6 +1059,21 @@ function tocarPlayer(fileId, ext, titulo) {
       console.error(err);
     })
     .obterBytesMidiaGS(fileId);
+}
+
+function calcularPorcentagem(input, spanId) {
+  const duracao = parseInt(document.getElementById('mat-duracao').value) || 30;
+  const segundos = parseInt(input.value) || 0;
+  const porcentagem = duracao > 0 ? ((segundos / duracao) * 100).toFixed(1) : 0;
+  document.getElementById(spanId).innerText = porcentagem + '%';
+}
+
+function recalcularTodasPorcentagens() {
+  calcularPorcentagem(document.getElementById('mat-m'), 'perc-m');
+  calcularPorcentagem(document.getElementById('mat-mn'), 'perc-mn');
+  calcularPorcentagem(document.getElementById('mat-mi'), 'perc-mi');
+  calcularPorcentagem(document.getElementById('mat-hn'), 'perc-hn');
+  calcularPorcentagem(document.getElementById('mat-hi'), 'perc-hi');
 }
 
     // --- SEÇÃO 3: MAPAS ---
@@ -1211,9 +1261,15 @@ function obterLetraPeca(index) {
 }
 // Função Auxiliar
 function atualizarDuracaoLegenda(selectElem) {
-  const duracao = selectElem.options[selectElem.selectedIndex].getAttribute('data-duracao');
-  const tdDuracao = selectElem.closest('tr').querySelector('.td-duracao');
-  tdDuracao.innerText = duracao ? duracao + 's' : '-';
+  const opt = selectElem.options[selectElem.selectedIndex];
+  const tr = selectElem.closest('tr');
+  
+  tr.querySelector('.td-duracao').innerText = opt.getAttribute('data-duracao') ? opt.getAttribute('data-duracao') + 's' : '-';
+  tr.querySelector('.td-m').innerText = opt.getAttribute('data-m') && opt.getAttribute('data-m') != 0 ? opt.getAttribute('data-m') + 's' : '-';
+  tr.querySelector('.td-mn').innerText = opt.getAttribute('data-mn') && opt.getAttribute('data-mn') != 0 ? opt.getAttribute('data-mn') + 's' : '-';
+  tr.querySelector('.td-mi').innerText = opt.getAttribute('data-mi') && opt.getAttribute('data-mi') != 0 ? opt.getAttribute('data-mi') + 's' : '-';
+  tr.querySelector('.td-hn').innerText = opt.getAttribute('data-hn') && opt.getAttribute('data-hn') != 0 ? opt.getAttribute('data-hn') + 's' : '-';
+  tr.querySelector('.td-hi').innerText = opt.getAttribute('data-hi') && opt.getAttribute('data-hi') != 0 ? opt.getAttribute('data-hi') + 's' : '-';
 }
 
 // Verifica a grade ao vivo e bloqueia a próxima célula cronológica se for 60s
@@ -1294,24 +1350,26 @@ function verificarGrade60s() {
 // ADICIONAR LINHA NA LEGENDA COM DADOS
 function adicionarMaterialLegendaComDados(letraEspecifica, tituloEspecifico) {
   const tbody = document.querySelector("#tabela-legendas tbody");
-  let duracaoEncontrada = "";
+  let matEncontrado = null;
+  
   let options = obterMateriaisDoFiltro().map(m => {
-    // Monta o nome final ex: "POLI26 - PARTIDO CARGO TITULO.mp3"
     const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
     const isSelected = (m.titulo === tituloEspecifico) ? 'selected' : '';
-    if (isSelected) duracaoEncontrada = m.duracao; 
-    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" ${isSelected}>${nomeArquivoReal}</option>`;
+    if (isSelected) matEncontrado = m; 
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" data-m="${m.m||0}" data-mn="${m.mn||0}" data-mi="${m.mi||0}" data-hn="${m.hn||0}" data-hi="${m.hi||0}" ${isSelected}>${nomeArquivoReal}</option>`;
   }).join('');
   
-  let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
-                      <option value="" data-duracao="">Selecione...</option>
-                      ${options}
-                    </select>`;
+  let selectHTML = `<select class="select-material" data-letra="${letraEspecifica}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();"><option value="" data-duracao="">Selecione...</option>${options}</select>`;
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraEspecifica}</td>
     <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">${duracaoEncontrada ? duracaoEncontrada + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">${matEncontrado ? matEncontrado.duracao + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">${matEncontrado && matEncontrado.m ? matEncontrado.m + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">${matEncontrado && matEncontrado.mn ? matEncontrado.mn + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">${matEncontrado && matEncontrado.mi ? matEncontrado.mi + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">${matEncontrado && matEncontrado.hn ? matEncontrado.hn + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">${matEncontrado && matEncontrado.hi ? matEncontrado.hi + 's' : '-'}</td>
   `;
   tbody.appendChild(tr);
   contadorMateriais++;
@@ -1336,6 +1394,11 @@ function adicionarMaterialLegenda() {
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraPeca}</td>
     <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">-</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">${matEncontrado && matEncontrado.m ? matEncontrado.m + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">${matEncontrado && matEncontrado.mn ? matEncontrado.mn + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">${matEncontrado && matEncontrado.mi ? matEncontrado.mi + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">${matEncontrado && matEncontrado.hn ? matEncontrado.hn + 's' : '-'}</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">${matEncontrado && matEncontrado.hi ? matEncontrado.hi + 's' : '-'}</td>
   `;
   tbody.appendChild(tr);
   contadorMateriais++;
@@ -1712,10 +1775,14 @@ function renderizarChecksEnvio() {
         }
         
         corpoPadrao += `🎬 MATERIAIS / MÍDIAS INCLUSAS:\n`;
-        matsMarcados.forEach(chk => {
-            // Puxa o Titulo Completo gerado (Ex: POLI26 - BORA TRABALHAR GOVERNADOR...)
-            const tituloFinal = chk.getAttribute('data-titulocompleto') || chk.getAttribute('data-titulo');
-            corpoPadrao += `- ${tituloFinal} (${chk.getAttribute('data-duracao')} segundos)\n`;
+        document.querySelectorAll('.chk-mat:checked').forEach(chk => {
+    const id = chk.value;
+    const mat = bancoMateriais.find(m => m.id === id);
+    if (mat) {
+      corpoPadrao += `▶ ${mat.tituloCompleto} (Duração: ${mat.duracao}s)\n`;
+      corpoPadrao += `   - Mulheres: ${mat.m || 0}s | Mulh. Negras: ${mat.mn || 0}s | Mulh. Indígenas: ${mat.mi || 0}s\n`;
+      corpoPadrao += `   - Homens Negros: ${mat.hn || 0}s | Homens Indígenas: ${mat.hi || 0}s\n\n`;
+    }
         });
     }
 
