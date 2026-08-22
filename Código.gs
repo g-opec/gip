@@ -132,7 +132,6 @@ function salvarMaterialGS(ano, objMaterial) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    
     let materiais = getJsonMateriais(pastaAno); 
     
     let novoArquivoId = null;
@@ -141,7 +140,6 @@ function salvarMaterialGS(ano, objMaterial) {
     if (objMaterial.arquivoBase64) {
       const blob = Utilities.newBlob(Utilities.base64Decode(objMaterial.arquivoBase64), objMaterial.mimeType, objMaterial.fileName);
       const file = pastaArquivos.createFile(blob);
-      
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       novoArquivoId = file.getId();
       novaExtensao = objMaterial.fileName.split('.').pop();
@@ -155,6 +153,11 @@ function salvarMaterialGS(ano, objMaterial) {
       partido: objMaterial.partido,
       cargo: objMaterial.cargo,
       duracao: objMaterial.duracao,
+      m: objMaterial.m || 0,
+      mn: objMaterial.mn || 0,
+      mi: objMaterial.mi || 0,
+      hn: objMaterial.hn || 0,
+      hi: objMaterial.hi || 0,
       dataUpload: Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy HH:mm:ss")
     };
 
@@ -170,7 +173,6 @@ function salvarMaterialGS(ano, objMaterial) {
       materiais.push(matData);
     }
     
-    // ATUALIZAÇÃO: Salva o JSON na pasta do Ano
     salvarJsonMateriais(pastaAno, materiais); 
     return { status: 'sucesso', materiais: materiais };
   } catch (e) {
