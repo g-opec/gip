@@ -5,18 +5,18 @@ function doGet(e) {
     // 2. Faz a requisição para buscar o conteúdo do arquivo
     const resposta = UrlFetchApp.fetch(urlGithub);
     const conteudoHtml = resposta.getContentText();
-    
+
     // 3. Cria um template usando o texto puro recebido do GitHub
     const template = HtmlService.createTemplate(conteudoHtml);
-    
+
     // 4. Injeta variáveis dinâmicas no template (opcional)
     template.mensagemDoServidor = "Autenticado e rodando perfeitamente!";
-    
+
     // 5. Avalia e retorna a interface para o navegador
     return template.evaluate()
       .setTitle('Gerenciador Inserções Partidarias gip G-opec')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL); // Permite embedar em iframes
-      
+
   } catch (erro) {
     // Retorno amigável em caso de erro na busca do arquivo
     return HtmlService.createHtmlOutput('<h1>Erro ao carregar a interface</h1><p>' + erro.message + '</p>');
@@ -24,38 +24,38 @@ function doGet(e) {
 }
 
 // 1. GERENCIAMENTO DE PASTAS
-function getListAno(){
-const root = DriveApp.getRootFolder();
+function getListAno() {
+  const root = DriveApp.getRootFolder();
   let pastaPolitica = root.getFoldersByName("Politica").hasNext() ? root.getFoldersByName("Politica").next() : root.createFolder("Politica");
   let pastasAno = pastaPolitica.getFolders();
 
   let latestFolder = null;
-    const list = [];
-    
-    // identifica a pasta com o ano mais recente
-    while(pastasAno.hasNext()){
-       let p = pastasAno.next();
-       let name = p.getName();
-       
-           let match = name.match(/\d{4}/);
-           if(match){
-               let y = parseInt(match[0]);
-               list.push(y)
-           }
-       }
+  const list = [];
 
-    list.sort((a, b) => b - a);
+  // identifica a pasta com o ano mais recente
+  while (pastasAno.hasNext()) {
+    let p = pastasAno.next();
+    let name = p.getName();
 
-    return list;
+    let match = name.match(/\d{4}/);
+    if (match) {
+      let y = parseInt(match[0]);
+      list.push(y)
+    }
+  }
+
+  list.sort((a, b) => b - a);
+
+  return list;
 }
 function getOuCriarPastaAno(ano) {
   const pastaPolitica = DriveApp.getFoldersByName("Politica").next();
-  
+
   let pastaAno = pastaPolitica.getFoldersByName(ano.toString()).hasNext() ? pastaPolitica.getFoldersByName(ano.toString()).next() : pastaPolitica.createFolder(ano.toString());
-  
+
   if (!pastaAno.getFoldersByName("arquivos").hasNext()) pastaAno.createFolder("arquivos");
   if (!pastaAno.getFoldersByName("mapas").hasNext()) pastaAno.createFolder("mapas");
-  
+
   return pastaAno;
 }
 
@@ -67,7 +67,7 @@ function salvarCSVProgramacao(csvString, ano) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const files = pastaAno.getFilesByName("dados_Programacao.csv");
-    
+
     if (files.hasNext()) {
       const file = files.next();
       file.setContent(csvString);
@@ -76,7 +76,7 @@ function salvarCSVProgramacao(csvString, ano) {
       const novoArquivo = pastaAno.createFile("dados_Programacao.csv", csvString, MimeType.CSV);
       return novoArquivo.getUrl();
     }
-  } catch(e) {
+  } catch (e) {
     throw new Error("Erro ao salvar CSV de Política: " + e.message);
   }
 }
@@ -92,10 +92,10 @@ function carregarCSVProgramacao(anoDesejado) {
       if (list.length === 0) return null; // Se não tem pastas, retorna nulo
       ano = list[0];
     }
-    
+
     const pastaAno = getOuCriarPastaAno(ano);
     const files = pastaAno.getFilesByName("dados_Programacao.csv");
-    
+
     if (files.hasNext()) {
       const file = files.next();
       const csvContent = file.getBlob().getDataAsString();
@@ -132,11 +132,11 @@ function salvarMaterialGS(ano, objMaterial) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const pastaArquivos = pastaAno.getFoldersByName("arquivos").next();
-    let materiais = getJsonMateriais(pastaAno); 
-    
+    let materiais = getJsonMateriais(pastaAno);
+
     let novoArquivoId = null;
     let novaExtensao = "";
-    
+
     if (objMaterial.arquivoBase64) {
       const blob = Utilities.newBlob(Utilities.base64Decode(objMaterial.arquivoBase64), objMaterial.mimeType, objMaterial.fileName);
       const file = pastaArquivos.createFile(blob);
@@ -148,8 +148,8 @@ function salvarMaterialGS(ano, objMaterial) {
     const index = materiais.findIndex(m => m.id === objMaterial.id);
     let matData = {
       id: objMaterial.id || new Date().getTime().toString(),
-      titulo: objMaterial.titulo, 
-      tituloCompleto: objMaterial.tituloCompleto, 
+      titulo: objMaterial.titulo,
+      tituloCompleto: objMaterial.tituloCompleto,
       partido: objMaterial.partido,
       cargo: objMaterial.cargo,
       duracao: objMaterial.duracao,
@@ -172,8 +172,8 @@ function salvarMaterialGS(ano, objMaterial) {
       matData.temArquivo = !!matData.arquivoId;
       materiais.push(matData);
     }
-    
-    salvarJsonMateriais(pastaAno, materiais); 
+
+    salvarJsonMateriais(pastaAno, materiais);
     return { status: 'sucesso', materiais: materiais };
   } catch (e) {
     throw new Error("Erro ao salvar material: " + e.message);
@@ -184,7 +184,7 @@ function listarMateriaisGS(ano) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     return getJsonMateriais(pastaAno);
-  } catch(e) {
+  } catch (e) {
     return [];
   }
 }
@@ -198,7 +198,7 @@ function obterBytesMidiaGS(fileId) {
       base64: Utilities.base64Encode(blob.getBytes()),
       mimeType: file.getMimeType()
     };
-  } catch(e) {
+  } catch (e) {
     throw new Error("Erro ao carregar mídia do Drive: " + e.message);
   }
 }
@@ -208,18 +208,18 @@ function excluirMaterialGS(ano, id) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     let materiais = getJsonMateriais(pastaAno);
-    
+
     const index = materiais.findIndex(m => m.id === id);
     if (index >= 0) {
       const mat = materiais[index];
       // Se tiver arquivo físico, move pra lixeira
       if (mat.arquivoId) {
-         try { DriveApp.getFileById(mat.arquivoId).setTrashed(true); } catch(e) {}
+        try { DriveApp.getFileById(mat.arquivoId).setTrashed(true); } catch (e) { }
       }
       // Remove do Banco de Dados JSON
       materiais.splice(index, 1);
-      
-      salvarJsonMateriais(pastaAno, materiais); 
+
+      salvarJsonMateriais(pastaAno, materiais);
     }
     return { status: 'sucesso', materiais: materiais };
   } catch (e) {
@@ -237,27 +237,27 @@ function processarPDFComOCR(base64Data, fileName) {
   try {
     // Decodifica o base64 vindo do front-end
     let blob = Utilities.newBlob(Utilities.base64Decode(base64Data), MimeType.PDF, fileName);
-    
+
     // 1. Em v3, usamos "name" no lugar de "title"
     let recurso = {
       name: "OCR_TEMP_" + fileName,
       mimeType: "application/vnd.google-apps.document" // Força a conversão para Google Doc (Aciona o OCR)
     };
-    
+
     // 2. Em v3, o método é create() em vez de insert()
     let arquivoDoc = Drive.Files.create(recurso, blob);
-    
+
     // 3. Abrir o Documento gerado e extrair texto bruto
     let docId = arquivoDoc.id;
-    let doc = DocumentApp.openById(docId); 
-    let textoExtraido = doc.getBody().getText(); 
-    
+    let doc = DocumentApp.openById(docId);
+    let textoExtraido = doc.getBody().getText();
+
     // 4. Apagar o arquivo temporário
     DriveApp.getFileById(docId).setTrashed(true);
-    
+
     // Retorna o texto bruto para o front-end organizar 
     return textoExtraido;
-    
+
   } catch (erro) {
     throw new Error("Erro no processamento OCR: " + erro.message);
   }
@@ -268,10 +268,10 @@ function salvarMapaGS(ano, nomePartido, htmlConteudo, numeroMapaOrig) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const pastaMapas = pastaAno.getFoldersByName("mapas").next();
-    
-    const numeroMapa = numeroMapaOrig || new Date().getTime().toString().slice(-6); 
+
+    const numeroMapa = numeroMapaOrig || new Date().getTime().toString().slice(-6);
     const nomeArquivo = `MAPA_${numeroMapa}_${nomePartido}.pdf`;
-    
+
     const htmlLimpo = `
       <html>
         <head>
@@ -291,9 +291,9 @@ function salvarMapaGS(ano, nomePartido, htmlConteudo, numeroMapaOrig) {
     const blob = Utilities.newBlob(htmlLimpo, MimeType.HTML).getAs(MimeType.PDF);
     blob.setName(nomeArquivo);
     pastaMapas.createFile(blob);
-    
+
     return true;
-  } catch(e) {
+  } catch (e) {
     throw new Error("Erro ao salvar PDF do Mapa: " + e.message);
   }
 }
@@ -305,14 +305,14 @@ function salvarContatosGS(ano, contatosString) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const files = pastaAno.getFilesByName("contatos.json");
-    
+
     if (files.hasNext()) {
       files.next().setContent(contatosString);
     } else {
       pastaAno.createFile("contatos.json", contatosString, MimeType.PLAIN_TEXT);
     }
     return true;
-  } catch(e) {
+  } catch (e) {
     throw new Error("Erro ao salvar contatos: " + e.message);
   }
 }
@@ -321,12 +321,12 @@ function carregarContatosGS(ano) {
   try {
     const pastaAno = getOuCriarPastaAno(ano);
     const files = pastaAno.getFilesByName("contatos.json");
-    
+
     if (files.hasNext()) {
       return files.next().getBlob().getDataAsString();
     }
     return "";
-  } catch(e) {
+  } catch (e) {
     return "";
   }
 }
@@ -337,8 +337,8 @@ function listarMapasGS(ano) {
     const pastaMapas = pastaAno.getFoldersByName("mapas").next();
     const files = pastaMapas.getFiles();
     let mapas = [];
-    
-    while(files.hasNext()){
+
+    while (files.hasNext()) {
       let f = files.next();
       mapas.push({
         id: f.getId(),
@@ -346,11 +346,11 @@ function listarMapasGS(ano) {
         data: Utilities.formatDate(f.getDateCreated(), "GMT-3", "dd/MM/yyyy HH:mm")
       });
     }
-    
+
     // Ordena do mais recente para o mais antigo
-    mapas.sort((a, b) => b.nome.localeCompare(a.nome)); 
+    mapas.sort((a, b) => b.nome.localeCompare(a.nome));
     return mapas;
-  } catch(e) {
+  } catch (e) {
     return [];
   }
 }
@@ -358,13 +358,13 @@ function listarMapasGS(ano) {
 function enviarEmailGS(para, cc, assunto, corpo, idsAnexos) {
   try {
     let attachments = [];
-    
+
     // Busca os arquivos no Drive para anexar fisicamente
     idsAnexos.forEach(id => {
       try {
         let file = DriveApp.getFileById(id);
         attachments.push(file.getBlob());
-      } catch(err) {
+      } catch (err) {
         // Ignora arquivo se não encontrar
       }
     });
@@ -376,7 +376,7 @@ function enviarEmailGS(para, cc, assunto, corpo, idsAnexos) {
       body: corpo,
       attachments: attachments
     });
-    
+
     return { status: "sucesso" };
   } catch (e) {
     throw new Error("Erro ao enviar email: " + e.message);
