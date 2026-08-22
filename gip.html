@@ -129,6 +129,80 @@
     #lista-materiais li:hover {
       background-color: #f8f9fa;
     }
+
+    /* ==========================================
+   ESTILOS DE IMPRESSÃO DO RELATÓRIO
+========================================== */
+
+/* Esconde na tela normal */
+.print-only-header, 
+.print-only-footer {
+    display: none;
+}
+
+@media print {
+    /* 1. Esconde tudo da página por padrão */
+    body * {
+        visibility: hidden;
+    }
+
+    /* 2. Torna visível apenas a aba do relatório e seus elementos filhos */
+    #tab-relatorio, #tab-relatorio * {
+        visibility: visible;
+    }
+
+    /* 3. Posiciona a aba de relatório no canto superior esquerdo da folha de papel */
+    #tab-relatorio {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        border: none !important; /* Tira bordas que ficariam feias no papel */
+    }
+
+    /* 4. Oculta botões e elementos indesejados na impressão */
+    .no-print {
+        display: none !important;
+    }
+
+    /* 5. Estiliza o cabeçalho da impressão (Logo na direita) */
+    .print-only-header {
+        display: block !important;
+        text-align: right; /* Joga a logo pra direita */
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    /* Ajuste da altura da logo para bater com a do menu (ajuste o valor se necessário) */
+    .print-only-header img {
+        height: 40px; 
+        object-fit: contain;
+    }
+
+    /* 6. Estiliza o rodapé da impressão (URL centralizada) */
+    .print-only-footer {
+        display: block !important;
+        position: fixed; /* O position fixed no papel faz o elemento repetir no rodapé de TODAS as páginas impressas */
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 11px;
+        color: #555;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+        font-family: sans-serif;
+    }
+
+    /* Garante que as cores de fundo (como os cards cinzas) saiam na impressora */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
   </style>
 </head>
 
@@ -385,7 +459,25 @@
     <!-- SEÇÃO 5: RELATÓRIO DE COTAS -->
     <div id="tab-relatorio" class="tab-content">
       <div style="background: #fff; padding: 20px; border-radius: 6px; border: 1px solid #ccc;">
-        <h3 id="titulo-relatorio-cotas" style="margin-top:0;">Relatório de Cotas - Todos</h3>
+        
+        <!-- ELEMENTOS EXCLUSIVOS DE IMPRESSÃO (Ocultos na tela) -->
+        <div class="print-only-header">
+           <img src="https://g-opec.github.io/master/fav/favicon-32x32.png" alt="Logo">
+        </div>
+
+        <!-- CABEÇALHO DA TELA (Com o botão de imprimir) -->
+        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 id="titulo-relatorio-cotas" style="margin: 0;">Relatório de Cotas - Todos</h3>
+            <button onclick="window.print()" style="padding: 8px 16px; background-color: #0052cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/></svg>
+                Imprimir Relatório
+            </button>
+        </div>
+        
+        <!-- RODAPÉ EXCLUSIVO DE IMPRESSÃO (Oculto na tela) -->
+        <div class="print-only-footer">
+            https://g-opec.github.io/gip/
+        </div>
 
         <!-- Painel de Resumo / Totais -->
         <div id="relatorio-resumo" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
