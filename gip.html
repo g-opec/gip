@@ -43,7 +43,7 @@
         <button class="tab-btn" onclick="switchTab('arquivos')">2. Biblioteca de Materiais</button>
         <button class="tab-btn" onclick="switchTab('mapa')">3. Gerar Mapa</button>
         <button class="tab-btn" onclick="switchTab('envios')">4. Envios (E-mail)</button>
-        <button class="tab-btn" onclick="switchTab('relatorio'); renderRelatorioCotas();">5. Relatório de Cotas</button>
+        <button class="tab-btn" onclick="switchTab('relatorio')">5. Relatório de Cotas</button>
       </div>
       <div style="padding-right: 15px;">
         <a href="https://g-opec.github.io/system/" target="_blank">
@@ -350,6 +350,7 @@ function carregarDadosDoAno(ano) {
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
       document.getElementById(`tab-${tabId}`).classList.add('active');
+      if(tabId==='relatorio') renderRelatorioCotas();
     }
 
     // --- SEÇÃO 1: TABELA E IMPORTAÇÃO ---
