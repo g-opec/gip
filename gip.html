@@ -1280,11 +1280,11 @@ function atualizarDuracaoLegenda(selectElem) {
   const tr = selectElem.closest('tr');
   
   tr.querySelector('.td-duracao').innerText = opt.getAttribute('data-duracao') ? opt.getAttribute('data-duracao') + 's' : '-';
-  tr.querySelector('.td-m').innerText = opt.getAttribute('data-m') && opt.getAttribute('data-m') != 0 ? opt.getAttribute('data-m') + 's' : '-';
-  tr.querySelector('.td-mn').innerText = opt.getAttribute('data-mn') && opt.getAttribute('data-mn') != 0 ? opt.getAttribute('data-mn') + 's' : '-';
-  tr.querySelector('.td-mi').innerText = opt.getAttribute('data-mi') && opt.getAttribute('data-mi') != 0 ? opt.getAttribute('data-mi') + 's' : '-';
-  tr.querySelector('.td-hn').innerText = opt.getAttribute('data-hn') && opt.getAttribute('data-hn') != 0 ? opt.getAttribute('data-hn') + 's' : '-';
-  tr.querySelector('.td-hi').innerText = opt.getAttribute('data-hi') && opt.getAttribute('data-hi') != 0 ? opt.getAttribute('data-hi') + 's' : '-';
+  tr.querySelector('.td-m').innerText = opt.getAttribute('data-m') && opt.getAttribute('data-m') != 0 ? opt.getAttribute('data-m') + '%' : '-';
+  tr.querySelector('.td-mn').innerText = opt.getAttribute('data-mn') && opt.getAttribute('data-mn') != 0 ? opt.getAttribute('data-mn') + '%' : '-';
+  tr.querySelector('.td-mi').innerText = opt.getAttribute('data-mi') && opt.getAttribute('data-mi') != 0 ? opt.getAttribute('data-mi') + '%' : '-';
+  tr.querySelector('.td-hn').innerText = opt.getAttribute('data-hn') && opt.getAttribute('data-hn') != 0 ? opt.getAttribute('data-hn') + '%' : '-';
+  tr.querySelector('.td-hi').innerText = opt.getAttribute('data-hi') && opt.getAttribute('data-hi') != 0 ? opt.getAttribute('data-hi') + '%' : '-';
 }
 
 // Verifica a grade ao vivo e bloqueia a próxima célula cronológica se for 60s
