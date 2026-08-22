@@ -1384,7 +1384,7 @@ function adicionarMaterialLegenda() {
   
   let options = obterMateriaisDoFiltro().map(m => {
     const nomeArquivoReal = m.tituloCompleto ? (m.tituloCompleto + (m.extensao ? "." + m.extensao : "")) : m.titulo;
-    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}">${nomeArquivoReal}</option>`;
+    return `<option value="${m.titulo}" data-titulocompleto="${nomeArquivoReal}" data-duracao="${m.duracao}" data-m="${m.m||0}" data-mn="${m.mn||0}" data-mi="${m.mi||0}" data-hn="${m.hn||0}" data-hi="${m.hi||0}">${nomeArquivoReal}</option>`;
   }).join('');
   
   let selectHTML = `<select class="select-material" data-letra="${letraPeca}" style="width:100%; padding:4px;" onchange="atualizarDuracaoLegenda(this); verificarGrade60s();">
@@ -1396,11 +1396,11 @@ function adicionarMaterialLegenda() {
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${letraPeca}</td>
     <td style="border: 1px solid #ddd; padding: 8px;">${selectHTML}</td>
     <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-duracao">-</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">'-'</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">'-'</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">'-'</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">'-'</td>
-    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">'-'</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-m">-</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mn">-</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-mi">-</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hn">-</td>
+    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;" class="td-hi">-</td>
   `;
   tbody.appendChild(tr);
   contadorMateriais++;
@@ -1779,7 +1779,7 @@ function renderizarChecksEnvio() {
         corpoPadrao += `🎬 MATERIAIS / MÍDIAS INCLUSAS:\n`;
         document.querySelectorAll('.chk-mat:checked').forEach(chk => {
     const id = chk.value;
-    const mat = bancoMateriais.find(m => m.id === id);
+    const mat = bancoMateriais.find(m => m.arquivoId === id);
     if (mat) {
       corpoPadrao += `▶ ${mat.tituloCompleto} (Duração: ${mat.duracao}s)\n`;
       corpoPadrao += `   - Mulheres: ${mat.m || 0}s | Mulh. Negras: ${mat.mn || 0}s | Mulh. Indígenas: ${mat.mi || 0}s\n`;
